@@ -99,6 +99,25 @@ async def spam(ctx, count: int):
         await asyncio.sleep(.5)  # Wait 1 second between messages to avoid rate limits
 
 
+@bot.event
+async def on_member_join(member):
+    role_id = 870551516837199902  # Replace with the actual role ID
+    welcome_channel_id = 870519197279608834  # Replace with your welcome channel ID
+
+    # Get the role and channel
+    role = member.guild.get_role(role_id)
+    welcome_channel = bot.get_channel(welcome_channel_id)
+
+    # Assign the role if it exists
+    if role:
+        await member.add_roles(role)
+    
+    # Send a welcome message if the channel exists
+    if welcome_channel:
+        await welcome_channel.send(f"🎉 Welcome {member.mention} to {member.guild.name}! ")
+
+
+
 
 
 print(f"Token: {TOKEN[:5]}********")
