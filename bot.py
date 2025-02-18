@@ -72,6 +72,17 @@ async def level(ctx):
         level = xp_data[user_id]["level"]
         await ctx.send(f"{ctx.author.mention}, you are level {level} with {xp} XP!")
 
+@bot.command()
+async def lol(ctx):
+    role_id = 882335005093810248  # Replace this with the actual role ID
+    role = ctx.guild.get_role(role_id)
+    
+    if role:
+        await ctx.send(f"{role.mention} Let's play League of Legends! 🎮", allowed_mentions=discord.AllowedMentions(roles=True))
+    else:
+        await ctx.send("Role not found!")
+
+
 print(f"Token: {TOKEN[:5]}********")
 
 bot.run(TOKEN)
