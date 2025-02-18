@@ -2,6 +2,7 @@ import discord
 import random
 import json
 import os
+import asyncio 
 from discord.ext import commands
 
 # Load bot token from environment variable
@@ -83,21 +84,20 @@ async def lol(ctx):
     else:
         await ctx.send("Role not found!")
 
+
 @bot.command()
 async def spam(ctx, count: int):
-    user_id = 310933291928649730  # Replace with the actual user ID
-    user = await bot.fetch.user(user_id)
+    user_id = 310933291928649730  # Replace with actual user ID
+    user = await bot.fetch_user(user_id)  # Fetch user by ID
 
-    if not user:
-        await ctx.send("User not found!")
-        return
-
-    if count > 20:  # Limit the spam to avoid abuse
+    if count > 20:  # Set a reasonable limit
         await ctx.send("Please enter a number **20 or lower**.")
         return
 
     for _ in range(count):
-        await ctx.send(f"{user.mention} I NEED MASTER 🔔")
+        await ctx.send(f"{user.mention} I NEED MASTER RIGHT NOW")
+        await asyncio.sleep(1)  # Wait 1 second between messages to avoid rate limits
+
 
 
 
