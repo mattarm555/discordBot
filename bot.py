@@ -8,7 +8,8 @@ from discord.ext import commands
 TOKEN = os.getenv("TOKEN")  # Make sure TOKEN is set in your environment
 
 intents = discord.Intents.default()
-intents.message_content = True  # Enable message reading
+intents.members = True  # Enable member fetching
+intents.message_content = True  # Keep this for message reading
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
