@@ -96,7 +96,7 @@ async def spam(ctx, count: int):
 
     for _ in range(count):
         await ctx.send(f"{user.mention} I NEED MASTER RIGHT NOW")
-        await asyncio.sleep(1)  # Wait 1 second between messages to avoid rate limits
+        await asyncio.sleep(.5)  # Wait 1 second between messages to avoid rate limits
 
 
 
