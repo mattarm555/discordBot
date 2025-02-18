@@ -72,4 +72,6 @@ async def level(ctx):
         level = xp_data[user_id]["level"]
         await ctx.send(f"{ctx.author.mention}, you are level {level} with {xp} XP!")
 
+print(f"Token: {TOKEN[:5]}********")
+
 bot.run(TOKEN)
