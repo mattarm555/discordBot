@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 
-TOKEN = "NzYxNjUyNjM3NzAzNDcxMTA1.GvzNJq.nYT0QRE7bz0-x9mTZiMkiFnRS1OjlUBG4swuHs"
+TOKEN = "NzYxNjUyNjM3NzAzNDcxMTA1.G5RbJE.FzeGuzJvy22vknxhLxdDhQfd2fZPSM3YxdRFWg"
 
 intents = discord.Intents.default()
 intents.message_content = True  # Enable message reading
