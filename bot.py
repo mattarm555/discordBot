@@ -14,7 +14,13 @@ intents.message_content = True  # Keep this for message reading
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+
+@bot.event
+async def on_ready():
+    print(f"Logged in as {bot.user}")
 # Load XP data from a file (persistent storage)
+
+
 try:
     with open("xp_data.json", "r") as f:
         xp_data = json.load(f)
@@ -31,13 +37,19 @@ level_up_responses = [
     "Die {user}, you're now at level {level}! Keep going! 💪"
 ]
 
-def get_level(xp):
-    """Calculate the level based on XP."""
-    return xp // LEVEL_UP_MULTIPLIER
+# XP system settings
+XP_PER_MESSAGE = 10  # XP gained per message
+BASE_XP = 100  # Starting XP requirement for level 1
 
-@bot.event
-async def on_ready():
-    print(f"Logged in as {bot.user}")
+level_up_responses = [
+    "Fuck you {user}! You just reached level {level}! 🎉",
+    "Keep yourself safe {user}! You're now level {level}! 🚀",
+    "Die {user}, you're now at level {level}! Keep going! 💪"
+]
+
+def get_xp_needed(level):
+    """Returns the XP required to reach the next level."""
+    return BASE_XP * (level + 1)  # XP increases with level
 
 @bot.event
 async def on_message(message):
@@ -48,20 +60,26 @@ async def on_message(message):
     if user_id not in xp_data:
         xp_data[user_id] = {"xp": 0, "level": 0}
 
-    # Add XP and check for level-up
+    # Add XP
     xp_data[user_id]["xp"] += XP_PER_MESSAGE
-    new_level = get_level(xp_data[user_id]["xp"])
+    current_level = xp_data[user_id]["level"]
+    next_level_xp = get_xp_needed(current_level)
 
-    if new_level > xp_data[user_id]["level"]:
-        xp_data[user_id]["level"] = new_level
+    # Check for level-up
+    if xp_data[user_id]["xp"] >= next_level_xp:
+        xp_data[user_id]["level"] += 1  # Increase level
+        new_level = xp_data[user_id]["level"]
+        next_level_xp = get_xp_needed(new_level)
         response = random.choice(level_up_responses).format(user=message.author.mention, level=new_level)
+        
+        print(f"DEBUG: {message.author} leveled up to {new_level}")  # Debugging
         await message.channel.send(response)
 
     # Save XP data
     with open("xp_data.json", "w") as f:
         json.dump(xp_data, f, indent=4)
 
-    await bot.process_commands(message)  # Process other bot commands
+    await bot.process_commands(message)  # Process other commands
 
 @bot.command()
 async def level(ctx):
