@@ -86,7 +86,7 @@ async def lol(ctx):
 @bot.command()
 async def spam(ctx, count: int):
     user_id = 310933291928649730  # Replace with the actual user ID
-    user = ctx.guild.get_member(user_id)
+    user = await bot.fetch.user(user_id)
 
     if not user:
         await ctx.send("User not found!")
