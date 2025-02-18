@@ -24,9 +24,9 @@ XP_PER_MESSAGE = 10  # XP gained per message
 LEVEL_UP_MULTIPLIER = 100  # XP required to level up (e.g., level 2 = 200 XP)
 
 level_up_responses = [
-    "Congrats {user}! You just reached level {level}! 🎉",
-    "Well done {user}! You're now level {level}! 🚀",
-    "Level up! {user}, you're now at level {level}! Keep going! 💪"
+    "Fuck you {user}! You just reached level {level}! 🎉",
+    "Keep yourself safe {user}! You're now level {level}! 🚀",
+    "Die {user}, you're now at level {level}! Keep going! 💪"
 ]
 
 def get_level(xp):
