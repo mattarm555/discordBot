@@ -82,6 +82,23 @@ async def lol(ctx):
     else:
         await ctx.send("Role not found!")
 
+@bot.command()
+async def spam(ctx, count: int):
+    user_id = 310933291928649730  # Replace with the actual user ID
+    user = ctx.guild.get_member(user_id)
+
+    if not user:
+        await ctx.send("User not found!")
+        return
+
+    if count > 20:  # Limit the spam to avoid abuse
+        await ctx.send("Please enter a number **20 or lower**.")
+        return
+
+    for _ in range(count):
+        await ctx.send(f"{user.mention} I NEED MASTER 🔔")
+
+
 
 print(f"Token: {TOKEN[:5]}********")
 
