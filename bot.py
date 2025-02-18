@@ -79,7 +79,7 @@ async def lol(ctx):
     role = ctx.guild.get_role(role_id)
     
     if role:
-        await ctx.send(f"{role.mention} Let's play League of Legends! 🎮", allowed_mentions=discord.AllowedMentions(roles=True))
+        await ctx.send(f"{role.mention} Get on you pieces of shit", allowed_mentions=discord.AllowedMentions(roles=True))
     else:
         await ctx.send("Role not found!")
 
