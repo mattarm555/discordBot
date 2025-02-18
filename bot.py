@@ -69,10 +69,13 @@ async def on_message(message):
     if xp_data[user_id]["xp"] >= next_level_xp:
         xp_data[user_id]["level"] += 1  # Increase level
         new_level = xp_data[user_id]["level"]
-        next_level_xp = get_xp_needed(new_level)
+
+        # Reset XP to 0 on level-up
+        xp_data[user_id]["xp"] = 0  
+
         response = random.choice(level_up_responses).format(user=message.author.mention, level=new_level)
         
-        print(f"DEBUG: {message.author} leveled up to {new_level}")  # Debugging
+        print(f"DEBUG: {message.author} leveled up to {new_level} (XP reset to 0)")  # Debugging
         await message.channel.send(response)
 
     # Save XP data
@@ -80,6 +83,7 @@ async def on_message(message):
         json.dump(xp_data, f, indent=4)
 
     await bot.process_commands(message)  # Process other commands
+
 
 @bot.command()
 async def level(ctx):
