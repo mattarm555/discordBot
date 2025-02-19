@@ -103,8 +103,8 @@ async def lol(ctx, count: int = 1):
         await ctx.send(embed=embed)
         return
 
-    if count > 10:
-        await ctx.send("⚠ Please enter a number **10 or lower**.")
+    if count > 20:
+        await ctx.send("⚠ Please enter a number **20 or lower**.")
         return
 
     for _ in range(count):
@@ -117,8 +117,8 @@ async def spam(ctx, count: int):
     user_id = 310933291928649730  # Replace with actual user ID
     user = await bot.fetch_user(user_id)
 
-    if count > 10:
-        await ctx.send("⚠ Please enter a number **10 or lower**.")
+    if count > 20:
+        await ctx.send("⚠ Please enter a number **20 or lower**.")
         return
 
     for _ in range(count):
