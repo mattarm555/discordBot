@@ -198,10 +198,6 @@ async def leaderboard(ctx):
     embed = discord.Embed(title="🏆 Dumbass Leaderboard", description=leaderboard_text, color=discord.Color.gold())
     await ctx.send(embed=embed)
 
-    except Exception as e:
-        await ctx.send(f"❌ Error retrieving data: {e}")
-        print(f"Error: {e}")
-
-
+    
 print(f"Token: {TOKEN[:5]}********")
 bot.run(TOKEN)
