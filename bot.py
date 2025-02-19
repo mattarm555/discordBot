@@ -102,7 +102,7 @@ async def lol(ctx, count: int = 1):
     role_id = 882335005093810248  # Replace this with the actual role ID
     role = ctx.guild.get_role(role_id)
     
-   if not role:
+    if not role:
         await ctx.send("Role not found!")
         return
 
