@@ -94,7 +94,8 @@ async def level(ctx):
 
 @bot.command()
 async def lol(ctx, count: int = 1):
-    role_id = 882335005093810248  # Replace this with the actual role ID
+    """Mentions the League of Legends role."""
+    role_id = 882335005093810248  # Replace with actual role ID
     role = ctx.guild.get_role(role_id)
 
     if not role:
@@ -103,34 +104,32 @@ async def lol(ctx, count: int = 1):
         return
 
     if count > 10:
-        embed = discord.Embed(title="⚠ Limit Reached", description="Please enter a number **10 or lower**.", color=discord.Color.orange())
-        await ctx.send(embed=embed)
+        await ctx.send("⚠ Please enter a number **10 or lower**.")
         return
 
     for _ in range(count):
-        embed = discord.Embed(title="🎮 League of Legends", description=f"{role.mention} Get on you pieces of shit", color=discord.Color.blue())
-        await ctx.send(embed=embed)
+        await ctx.send(f"{role.mention} Get on you pieces of shit", allowed_mentions=discord.AllowedMentions(roles=True))
         await asyncio.sleep(0.75)
 
 @bot.command()
 async def spam(ctx, count: int):
+    """Mentions a specific user multiple times."""
     user_id = 310933291928649730  # Replace with actual user ID
     user = await bot.fetch_user(user_id)
 
     if count > 10:
-        embed = discord.Embed(title="⚠ Limit Reached", description="Please enter a number **10 or lower**.", color=discord.Color.orange())
-        await ctx.send(embed=embed)
+        await ctx.send("⚠ Please enter a number **10 or lower**.")
         return
 
     for _ in range(count):
-        embed = discord.Embed(title="📢 Spam Alert", description=f"{user.mention} I NEED MASTER RIGHT NOW", color=discord.Color.red())
-        await ctx.send(embed=embed)
+        await ctx.send(f"{user.mention} I NEED MASTER RIGHT NOW")
         await asyncio.sleep(0.5)
 
 @bot.event
 async def on_member_join(member):
-    role_id = 870551516837199902  # Replace with the actual role ID
-    welcome_channel_id = 870519197279608834  # Replace with your welcome channel ID
+    """Assigns a role and welcomes a new member."""
+    role_id = 870551516837199902  # Replace with actual role ID
+    welcome_channel_id = 870519197279608834  # Replace with actual welcome channel ID
 
     role = member.guild.get_role(role_id)
     welcome_channel = bot.get_channel(welcome_channel_id)
@@ -163,6 +162,7 @@ league_champions = [
 
 @bot.command()
 async def champ(ctx):
+    """Randomly selects a League of Legends champion."""
     champion = random.choice(league_champions)
     embed = discord.Embed(title="🎮 Random League Champion", description=f"Your champion is: **{champion}**!", color=discord.Color.purple())
     await ctx.send(embed=embed)
