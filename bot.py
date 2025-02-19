@@ -102,10 +102,18 @@ async def lol(ctx):
     role_id = 882335005093810248  # Replace this with the actual role ID
     role = ctx.guild.get_role(role_id)
     
-    if role:
-        await ctx.send(f"{role.mention} Get on you pieces of shit", allowed_mentions=discord.AllowedMentions(roles=True))
-    else:
+   if not role:
         await ctx.send("Role not found!")
+        return
+
+    # Limit max spam count to prevent abuse
+    if count > 20:
+        await ctx.send("Please enter a number **20 or lower**.")
+        return
+
+    for _ in range(count):
+        await ctx.send(f"{role.mention} Get on you pieces of shit", allowed_mentions=discord.AllowedMentions(roles=True))
+        await asyncio.sleep(0.75)  # Adds a 0.5 second delay between messages
 
 
 @bot.command()
