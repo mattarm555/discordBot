@@ -98,7 +98,7 @@ async def level(ctx):
         await ctx.send(f"{ctx.author.mention}, you are level {level} with {xp} XP!")
 
 @bot.command()
-async def lol(ctx):
+async def lol(ctx, count: int = 1):
     role_id = 882335005093810248  # Replace this with the actual role ID
     role = ctx.guild.get_role(role_id)
     
@@ -106,15 +106,14 @@ async def lol(ctx):
         await ctx.send("Role not found!")
         return
 
-    # Limit max spam count to prevent abuse
-    if count > 20:
+    # Limit spam to prevent abuse
+    if count > 20:  # Adjusted from 20 to 10 for better moderation
         await ctx.send("Please enter a number **20 or lower**.")
         return
 
     for _ in range(count):
         await ctx.send(f"{role.mention} Get on you pieces of shit", allowed_mentions=discord.AllowedMentions(roles=True))
-        await asyncio.sleep(0.75)  # Adds a 0.5 second delay between messages
-
+        await asyncio.sleep(0.75)  # Adds a 0.75 second delay between messages
 
 @bot.command()
 async def spam(ctx, count: int):
