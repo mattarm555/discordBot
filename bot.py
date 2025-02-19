@@ -178,14 +178,14 @@ async def champ(ctx):
 
 @bot.command()
 async def leaderboard(ctx):
-    """Displays the top 10 users based on XP."""
+    """Displays the top 10 users based on level first, then XP as a tiebreaker."""
     if not xp_data:
-        embed = discord.Embed(title="🏆 Top Dumbasses", description="No XP data available yet!", color=discord.Color.orange())
+        embed = discord.Embed(title="🏆 Leaderboard", description="No XP data available yet!", color=discord.Color.orange())
         await ctx.send(embed=embed)
         return
 
-    # Sort users by XP in descending order
-    sorted_xp = sorted(xp_data.items(), key=lambda x: x[1]["xp"], reverse=True)
+    # Sort by level first, then by XP (highest to lowest)
+    sorted_xp = sorted(xp_data.items(), key=lambda x: (x[1]["level"], x[1]["xp"]), reverse=True)
     
     # Take the top 10 users
     top_users = sorted_xp[:10]
@@ -195,8 +195,9 @@ async def leaderboard(ctx):
         user = await bot.fetch_user(int(user_id))
         leaderboard_text += f"**{rank}. {user.name}** - Level {data['level']} ({data['xp']} XP)\n"
 
-    embed = discord.Embed(title="🏆 XP Leaderboard", description=leaderboard_text, color=discord.Color.gold())
+    embed = discord.Embed(title="🏆 Dumbass Leaderboard", description=leaderboard_text, color=discord.Color.gold())
     await ctx.send(embed=embed)
+
 
 
 print(f"Token: {TOKEN[:5]}********")
