@@ -2,8 +2,7 @@ import discord
 import random
 import json
 import os
-import asyncio 
-import random
+import asyncio
 from discord.ext import commands
 
 # Load bot token from environment variable
@@ -15,28 +14,16 @@ intents.message_content = True  # Keep this for message reading
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
+
 # Load XP data from a file (persistent storage)
-
-
 try:
     with open("xp_data.json", "r") as f:
         xp_data = json.load(f)
 except FileNotFoundError:
     xp_data = {}
-
-# XP system settings
-XP_PER_MESSAGE = 10  # XP gained per message
-LEVEL_UP_MULTIPLIER = 100  # XP required to level up (e.g., level 2 = 200 XP)
-
-level_up_responses = [
-    "Fuck you {user}! You just reached level {level}! 🎉",
-    "Keep yourself safe {user}! You're now level {level}! 🚀",
-    "Die {user}, you're now at level {level}! Keep going! 💪"
-]
 
 # XP system settings
 XP_PER_MESSAGE = 10  # XP gained per message
@@ -70,14 +57,14 @@ async def on_message(message):
     if xp_data[user_id]["xp"] >= next_level_xp:
         xp_data[user_id]["level"] += 1  # Increase level
         new_level = xp_data[user_id]["level"]
+        xp_data[user_id]["xp"] = 0  # Reset XP on level-up
 
-        # Reset XP to 0 on level-up
-        xp_data[user_id]["xp"] = 0  
-
-        response = random.choice(level_up_responses).format(user=message.author.mention, level=new_level)
-        
-        print(f"DEBUG: {message.author} leveled up to {new_level} (XP reset to 0)")  # Debugging
-        await message.channel.send(response)
+        embed = discord.Embed(
+            title="🎮 Level Up!",
+            description=random.choice(level_up_responses).format(user=message.author.mention, level=new_level),
+            color=discord.Color.gold()
+        )
+        await message.channel.send(embed=embed)
 
     # Save XP data
     with open("xp_data.json", "w") as f:
@@ -85,69 +72,81 @@ async def on_message(message):
 
     await bot.process_commands(message)  # Process other commands
 
-
 @bot.command()
 async def level(ctx):
     """Command to check user's level."""
     user_id = str(ctx.author.id)
     if user_id not in xp_data:
-        await ctx.send(f"{ctx.author.mention}, you haven't gained any XP yet!")
+        embed = discord.Embed(
+            title="🎮 Level Check",
+            description=f"{ctx.author.mention}, you haven't gained any XP yet!",
+            color=discord.Color.orange()
+        )
     else:
         xp = xp_data[user_id]["xp"]
         level = xp_data[user_id]["level"]
-        await ctx.send(f"{ctx.author.mention}, you are level {level} with {xp} XP!")
+        embed = discord.Embed(
+            title="🏆 XP Level",
+            description=f"{ctx.author.mention}, you are level **{level}** with **{xp} XP**!",
+            color=discord.Color.green()
+        )
+    await ctx.send(embed=embed)
 
 @bot.command()
 async def lol(ctx, count: int = 1):
     role_id = 882335005093810248  # Replace this with the actual role ID
     role = ctx.guild.get_role(role_id)
-    
+
     if not role:
-        await ctx.send("Role not found!")
+        embed = discord.Embed(title="❌ Error", description="Role not found!", color=discord.Color.red())
+        await ctx.send(embed=embed)
         return
 
-    # Limit spam to prevent abuse
-    if count > 20:  # Adjusted from 20 to 10 for better moderation
-        await ctx.send("Please enter a number **20 or lower**.")
+    if count > 10:
+        embed = discord.Embed(title="⚠ Limit Reached", description="Please enter a number **10 or lower**.", color=discord.Color.orange())
+        await ctx.send(embed=embed)
         return
 
     for _ in range(count):
-        await ctx.send(f"{role.mention} Get on you pieces of shit", allowed_mentions=discord.AllowedMentions(roles=True))
-        await asyncio.sleep(0.75)  # Adds a 0.75 second delay between messages
+        embed = discord.Embed(title="🎮 League of Legends", description=f"{role.mention} Get on you pieces of shit", color=discord.Color.blue())
+        await ctx.send(embed=embed)
+        await asyncio.sleep(0.75)
 
 @bot.command()
 async def spam(ctx, count: int):
     user_id = 310933291928649730  # Replace with actual user ID
-    user = await bot.fetch_user(user_id)  # Fetch user by ID
+    user = await bot.fetch_user(user_id)
 
-    if count > 20:  # Set a reasonable limit
-        await ctx.send("Please enter a number **20 or lower**.")
+    if count > 10:
+        embed = discord.Embed(title="⚠ Limit Reached", description="Please enter a number **10 or lower**.", color=discord.Color.orange())
+        await ctx.send(embed=embed)
         return
 
     for _ in range(count):
-        await ctx.send(f"{user.mention} I NEED MASTER RIGHT NOW")
-        await asyncio.sleep(.5)  # Wait 1 second between messages to avoid rate limits
-
+        embed = discord.Embed(title="📢 Spam Alert", description=f"{user.mention} I NEED MASTER RIGHT NOW", color=discord.Color.red())
+        await ctx.send(embed=embed)
+        await asyncio.sleep(0.5)
 
 @bot.event
 async def on_member_join(member):
     role_id = 870551516837199902  # Replace with the actual role ID
     welcome_channel_id = 870519197279608834  # Replace with your welcome channel ID
 
-    # Get the role and channel
     role = member.guild.get_role(role_id)
     welcome_channel = bot.get_channel(welcome_channel_id)
 
-    # Assign the role if it exists
     if role:
         await member.add_roles(role)
-    
-    # Send a welcome message if the channel exists
+
     if welcome_channel:
-        await welcome_channel.send(f"🎉 Welcome {member.mention} to {member.guild.name}! ")
+        embed = discord.Embed(
+            title="🎉 Welcome!",
+            description=f"Welcome {member.mention} to **{member.guild.name}**! Enjoy your stay!",
+            color=discord.Color.green()
+        )
+        await welcome_channel.send(embed=embed)
 
-
-# List of League of Legends champions (add more if needed)
+# List of League of Legends champions
 league_champions = [
     "Ahri", "Akali", "Aatrox", "Alistar", "Amumu", "Anivia", "Annie", "Aphelios", "Ashe",
     "Aurelion Sol", "Azir", "Bard", "Blitzcrank", "Brand", "Braum", "Caitlyn", "Camille",
@@ -160,27 +159,13 @@ league_champions = [
     "Lissandra", "Lucian", "Lulu", "Lux", "Malphite", "Malzahar", "Maokai", "Master Yi",
     "Miss Fortune", "Mordekaiser", "Morgana", "Nami", "Nasus", "Nautilus", "Neeko",
     "Nidalee", "Nocturne", "Nunu & Willump", "Olaf", "Orianna", "Ornn", "Pantheon",
-    "Poppy", "Pyke", "Qiyana", "Quinn", "Rakan", "Rammus", "Rek'Sai", "Rell", "Renekton",
-    "Rengar", "Riven", "Rumble", "Ryze", "Samira", "Sejuani", "Senna", "Seraphine",
-    "Sett", "Shaco", "Shen", "Shyvana", "Singed", "Sion", "Sivir", "Skarner", "Sona",
-    "Soraka", "Swain", "Sylas", "Syndra", "Tahm Kench", "Taliyah", "Talon", "Taric",
-    "Teemo", "Thresh", "Tristana", "Trundle", "Tryndamere", "Twisted Fate", "Twitch",
-    "Udyr", "Urgot", "Varus", "Vayne", "Veigar", "Vel'Koz", "Vex", "Vi", "Viego",
-    "Viktor", "Vladimir", "Volibear", "Warwick", "Wukong", "Xayah", "Xerath", "Xin Zhao",
-    "Yasuo", "Yone", "Yorick", "Yuumi", "Zac", "Zed", "Zeri", "Ziggs", "Zilean", "Zoe",
-    "Zyra"
 ]
 
 @bot.command()
 async def champ(ctx):
-    """Command to randomly pick a League of Legends champion."""
     champion = random.choice(league_champions)
-    await ctx.send(f"🎮 Your random League of Legends champion is: **{champion}**!")
-
-
-
-
+    embed = discord.Embed(title="🎮 Random League Champion", description=f"Your champion is: **{champion}**!", color=discord.Color.purple())
+    await ctx.send(embed=embed)
 
 print(f"Token: {TOKEN[:5]}********")
-
 bot.run(TOKEN)
