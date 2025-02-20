@@ -198,6 +198,18 @@ async def leaderboard(ctx):
     embed = discord.Embed(title="🏆 Dumbass Leaderboard", description=leaderboard_text, color=discord.Color.gold())
     await ctx.send(embed=embed)
 
+@bot.command()
+async def ward(ctx):
+    """Deletes the user's command message and replies."""
+    try:
+        await ctx.message.delete()  # Delete the command message
+        await ctx.send(f"nigward")
+    except discord.Forbidden:
+        await ctx.send("❌ I don't have permission to delete messages!")
+    except discord.HTTPException:
+        await ctx.send("❌ Failed to delete the message.")
+
+
     
 print(f"Token: {TOKEN[:5]}********")
 bot.run(TOKEN)
