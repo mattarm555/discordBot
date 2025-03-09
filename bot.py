@@ -218,7 +218,7 @@ async def ward(ctx):
     except discord.HTTPException:
         await ctx.send("❌ Failed to delete the message.")
 
-openai.api_key = os.getenv("OPENAI")
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 @bot.command()
 async def join(ctx):
