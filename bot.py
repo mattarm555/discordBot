@@ -3,6 +3,12 @@ import random
 import json
 import os
 import asyncio
+import openai
+import speech_recognition as sr
+import wave
+import pyaudio
+import aiohttp
+from gtts import gTTS
 from discord.ext import commands
 
 # Load bot token from environment variable
@@ -11,6 +17,9 @@ TOKEN = os.getenv("TOKEN")  # Make sure TOKEN is set in your environment
 intents = discord.Intents.default()
 intents.members = True  # Enable member fetching
 intents.message_content = True  # Keep this for message reading
+intents.messages = True
+intents.guilds = True
+intents.voice_states
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -209,7 +218,66 @@ async def ward(ctx):
     except discord.HTTPException:
         await ctx.send("❌ Failed to delete the message.")
 
+openai.api_key = os.getenv("OPENAI")
 
-    
+@bot.command()
+async def join(ctx):
+    """Bot joins the user's voice channel."""
+    if ctx.author.voice:
+        channel = ctx.author.voice.channel
+        vc = await channel.connect()
+        await ctx.send("I'm in the voice channel! Speak to me.")
+        await listen_and_respond(vc)
+    else:
+        await ctx.send("You need to be in a voice channel for me to join!")
+
+async def listen_and_respond(vc):
+    """Continuously listens and responds to speech."""
+    recognizer = sr.Recognizer()
+    mic = sr.Microphone()
+
+    while vc.is_connected():
+        with mic as source:
+            recognizer.adjust_for_ambient_noise(source)
+            print("Listening...")
+            try:
+                audio = recognizer.listen(source, timeout=10)
+                text = recognizer.recognize_google(audio)  # Convert speech to text
+                print(f"You said: {text}")
+
+                # Get AI response
+                response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=[{"role": "user", "content": text}]
+                )
+
+                ai_text = response["choices"][0]["message"]["content"]
+                print(f"AI Response: {ai_text}")
+
+                # Convert AI response to speech
+                tts = gTTS(ai_text, lang="en")
+                tts.save("response.mp3")
+
+                # Play response in voice channel
+                vc.play(discord.FFmpegPCMAudio("response.mp3"), after=lambda e: print("Finished speaking"))
+                
+                while vc.is_playing():
+                    await asyncio.sleep(1)
+
+            except sr.UnknownValueError:
+                print("Could not understand the audio.")
+            except sr.RequestError:
+                print("Speech recognition service is down.")
+
+@bot.command()
+async def leave(ctx):
+    """Bot leaves the voice channel."""
+    if ctx.voice_client:
+        await ctx.voice_client.disconnect()
+        await ctx.send("Left the voice channel.")
+    else:
+        await ctx.send("I'm not in a voice channel.")
+
+
 print(f"Token: {TOKEN[:5]}********")
 bot.run(TOKEN)
