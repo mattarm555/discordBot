@@ -252,13 +252,13 @@ async def play(ctx, url: str):
 
     ydl_opts = {
         'format': 'bestaudio/best',
+        'outtmpl': 'song.%(ext)s',
+        'quiet': False,
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
-        'outtmpl': 'song.mp3',
-        'quiet': True
     }
 
     try:
