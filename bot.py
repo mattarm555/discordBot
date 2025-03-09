@@ -229,12 +229,12 @@ async def ask(ctx, *, question: str):
     try:
         client = openai.OpenAI()
 
-response = client.chat.completions.create(
-    model="gpt-3.5-turbo",
-    messages=[{"role": "user", "content": question}]
-)
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": question}]
+        )
 
-ai_response = response.choices[0].message.content
+        ai_response = response.choices[0].message.content
 
         # Create an embed response
         embed = discord.Embed(title="🤖 ChatGPT Response", description=ai_response, color=discord.Color.blue())
