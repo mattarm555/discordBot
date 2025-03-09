@@ -8,12 +8,13 @@ import speech_recognition as sr
 import wave
 import pyaudio
 import aiohttp
+import yt_dlp
 from gtts import gTTS
 from discord.ext import commands
 
 # Load bot token from environment variable
 TOKEN = os.getenv("TOKEN")  # Make sure TOKEN is set in your environment
-openai.api_key = os.getenv("OPENAI_API_KEY")
+
 
 intents = discord.Intents.default()
 intents.members = True  # Enable member fetching
@@ -220,32 +221,70 @@ async def ward(ctx):
         await ctx.send("❌ Failed to delete the message.")
 
 @bot.command()
-async def ask(ctx, *, question: str):
-    """Handles the !ask command to get a response from ChatGPT"""
-    if not question:
-        await ctx.send("❌ Please provide a message to ask!")
+async def join(ctx):
+    """Joins the voice channel of the user who issued the command."""
+    if ctx.author.voice:
+        channel = ctx.author.voice.channel
+        await channel.connect()
+        await ctx.send("🔊 Joined the voice channel!")
+    else:
+        await ctx.send("❌ You need to be in a voice channel!")
+
+@bot.command()
+async def leave(ctx):
+    """Disconnects from the voice channel."""
+    if ctx.voice_client:
+        await ctx.voice_client.disconnect()
+        await ctx.send("👋 Left the voice channel.")
+    else:
+        await ctx.send("❌ I'm not in a voice channel!")
+
+@bot.command()
+async def play(ctx, url: str):
+    """Plays audio from a YouTube video."""
+    if not ctx.author.voice:
+        await ctx.send("❌ You need to be in a voice channel!")
         return
 
+    vc = ctx.voice_client
+    if not vc:
+        vc = await ctx.author.voice.channel.connect()
+
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+        'outtmpl': 'song.mp3',
+        'quiet': True
+    }
+
     try:
-        client = openai.OpenAI()
+        await ctx.send("🎵 Downloading audio...")
 
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": question}]
-        )
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
 
-        ai_response = response.choices[0].message.content
+        vc.play(discord.FFmpegPCMAudio("song.mp3"), after=lambda e: print("✅ Finished playing."))
+        await ctx.send(f"🎶 Now playing: {url}")
 
-        # Create an embed response
-        embed = discord.Embed(title="🤖 ChatGPT Response", description=ai_response, color=discord.Color.blue())
-        embed.set_footer(text=f"Asked by {ctx.author}", icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
-
-        await ctx.send(embed=embed)
+        while vc.is_playing():
+            await asyncio.sleep(1)
 
     except Exception as e:
         print(f"❌ Error: {e}")
-        await ctx.send("⚠️ An error occurred while fetching a response.")
+        await ctx.send("⚠️ An error occurred while trying to play audio.")
 
+@bot.command()
+async def stop(ctx):
+    """Stops the currently playing audio."""
+    if ctx.voice_client and ctx.voice_client.is_playing():
+        ctx.voice_client.stop()
+        await ctx.send("⏹️ Stopped playing.")
+    else:
+        await ctx.send("❌ No audio is currently playing.")
 
 print(f"Token: {TOKEN[:5]}********")
 bot.run(TOKEN)
