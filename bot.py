@@ -13,6 +13,7 @@ from discord.ext import commands
 
 # Load bot token from environment variable
 TOKEN = os.getenv("TOKEN")  # Make sure TOKEN is set in your environment
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 intents = discord.Intents.default()
 intents.members = True  # Enable member fetching
@@ -218,8 +219,6 @@ async def ward(ctx):
     except discord.HTTPException:
         await ctx.send("❌ Failed to delete the message.")
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
 @bot.command()
 async def join(ctx):
     """Bot joins the user's voice channel."""
@@ -234,7 +233,7 @@ async def join(ctx):
 async def listen_and_respond(vc):
     """Continuously listens and responds to speech."""
     recognizer = sr.Recognizer()
-    mic = sr.Microphone()
+    mic = sr.Microphone(device_index=None)
 
     while vc.is_connected():
         with mic as source:
