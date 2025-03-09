@@ -252,7 +252,7 @@ async def play(ctx, url: str):
 
     ydl_opts = {
         'format': 'bestaudio/best',
-        'outtmpl': 'song.%(ext)s',
+        'outtmpl': 'song',
         'quiet': False,
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
@@ -266,6 +266,8 @@ async def play(ctx, url: str):
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
+        print(f"✅ Downloaded file: {filename}")
+        print(f"🔍 Checking if file exists: {os.path.isfile(filename)}")
 
         vc.play(discord.FFmpegPCMAudio("song.mp3"), after=lambda e: print("✅ Finished playing."))
         await ctx.send(f"🎶 Now playing: {url}")
