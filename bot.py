@@ -222,7 +222,7 @@ async def ward(ctx):
 
 @bot.command()
 async def join(ctx):
-    """Joins the voice channel of the user who issued the command."""
+    """Joins the user's voice channel."""
     if ctx.author.voice:
         channel = ctx.author.voice.channel
         await channel.connect()
@@ -252,8 +252,7 @@ async def play(ctx, url: str):
 
     ydl_opts = {
         'format': 'bestaudio/best',
-        'outtmpl': 'song',
-        'quiet': False,
+        'outtmpl': 'song',  # Ensures the file is named "song"
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
@@ -265,12 +264,21 @@ async def play(ctx, url: str):
         await ctx.send("🎵 Downloading audio...")
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+            info = ydl.extract_info(url, download=True)
+
+        filename = "song.mp3"  # Set filename explicitly
+
         print(f"✅ Downloaded file: {filename}")
         print(f"🔍 Checking if file exists: {os.path.isfile(filename)}")
 
-        vc.play(discord.FFmpegPCMAudio("song.mp3"), after=lambda e: print("✅ Finished playing."))
-        await ctx.send(f"🎶 Now playing: {url}")
+        # Ensure file exists before playing
+        if not os.path.isfile(filename):
+            await ctx.send("❌ Error: The file was not found after download.")
+            return
+
+        await ctx.send(f"🎶 Now playing: {info['title']}")
+
+        vc.play(discord.FFmpegPCMAudio(filename), after=lambda e: print("✅ Finished playing."))
 
         while vc.is_playing():
             await asyncio.sleep(1)
@@ -287,6 +295,5 @@ async def stop(ctx):
         await ctx.send("⏹️ Stopped playing.")
     else:
         await ctx.send("❌ No audio is currently playing.")
-
 print(f"Token: {TOKEN[:5]}********")
 bot.run(TOKEN)
