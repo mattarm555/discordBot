@@ -20,7 +20,7 @@ intents.members = True  # Enable member fetching
 intents.message_content = True  # Keep this for message reading
 intents.messages = True
 intents.guilds = True
-intents.voice_states
+intents.voice_states = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -220,62 +220,30 @@ async def ward(ctx):
         await ctx.send("❌ Failed to delete the message.")
 
 @bot.command()
-async def join(ctx):
-    """Bot joins the user's voice channel."""
-    if ctx.author.voice:
-        channel = ctx.author.voice.channel
-        vc = await channel.connect()
-        await ctx.send("I'm in the voice channel! Speak to me.")
-        await listen_and_respond(vc)
-    else:
-        await ctx.send("You need to be in a voice channel for me to join!")
+async def ask(ctx, *, question: str):
+    """Handles the !ask command to get a response from ChatGPT"""
+    if not question:
+        await ctx.send("❌ Please provide a message to ask!")
+        return
 
-async def listen_and_respond(vc):
-    """Continuously listens and responds to speech."""
-    recognizer = sr.Recognizer()
-    mic = sr.Microphone(device_index=None)
+    try:
+        # Send message to OpenAI
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": question}]
+        )
 
-    while vc.is_connected():
-        with mic as source:
-            recognizer.adjust_for_ambient_noise(source)
-            print("Listening...")
-            try:
-                audio = recognizer.listen(source, timeout=10)
-                text = recognizer.recognize_google(audio)  # Convert speech to text
-                print(f"You said: {text}")
+        ai_response = response["choices"][0]["message"]["content"]
 
-                # Get AI response
-                response = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=[{"role": "user", "content": text}]
-                )
+        # Create an embed response
+        embed = discord.Embed(title="🤖 ChatGPT Response", description=ai_response, color=discord.Color.blue())
+        embed.set_footer(text=f"Asked by {ctx.author}", icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
 
-                ai_text = response["choices"][0]["message"]["content"]
-                print(f"AI Response: {ai_text}")
+        await ctx.send(embed=embed)
 
-                # Convert AI response to speech
-                tts = gTTS(ai_text, lang="en")
-                tts.save("response.mp3")
-
-                # Play response in voice channel
-                vc.play(discord.FFmpegPCMAudio("response.mp3"), after=lambda e: print("Finished speaking"))
-                
-                while vc.is_playing():
-                    await asyncio.sleep(1)
-
-            except sr.UnknownValueError:
-                print("Could not understand the audio.")
-            except sr.RequestError:
-                print("Speech recognition service is down.")
-
-@bot.command()
-async def leave(ctx):
-    """Bot leaves the voice channel."""
-    if ctx.voice_client:
-        await ctx.voice_client.disconnect()
-        await ctx.send("Left the voice channel.")
-    else:
-        await ctx.send("I'm not in a voice channel.")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        await ctx.send("⚠️ An error occurred while fetching a response.")
 
 
 print(f"Token: {TOKEN[:5]}********")
