@@ -303,6 +303,16 @@ async def stop(ctx):
         await ctx.send(embed=embed)
 
 @bot.command()
+async def start(ctx):
+    if ctx.voice_client and ctx.voice_client.is_paused():
+        ctx.voice_client.resume()
+        embed = discord.Embed(title='Started', description='Music resumed.', color=discord.Color.green())
+        await ctx.send(embed=embed)
+    else:
+        embed = discord.Embed(title='Not Started', description='No music is currently paused.', color=discord.Color.red())
+        await ctx.send(embed=embed)
+
+@bot.command()
 async def leave(ctx):
     if ctx.voice_client:
         await ctx.voice_client.disconnect()
