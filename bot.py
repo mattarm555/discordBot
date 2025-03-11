@@ -33,7 +33,7 @@ XP_PER_MINUTE = 1
 
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity=discord.Game(name='CONTAINS LIAMS SOUL'))
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name='!help'))
     print(f"Logged in as {bot.user}")
 
 # Load XP data from a file (persistent storage)
