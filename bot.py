@@ -158,13 +158,11 @@ async def spam(interaction: discord.Interaction, user: discord.Member, count: in
     # Send the first ping immediately
     await interaction.response.send_message(f"{user.mention} wya")
 
-    # Loop for the remaining pings (count - 1 times)
+    # If count is more than 1, loop through additional pings
     for _ in range(count - 1):
         await asyncio.sleep(0.75)
         await interaction.channel.send(f"{user.mention} wya")
 
-
-    # No followup message is sent after spamming
 
 
 @bot.event
