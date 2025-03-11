@@ -118,36 +118,48 @@ async def level(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
 
-@bot.command()
-async def lol(ctx, count: int = 1):
+@tree.command(name="lol", description="Mentions the League of Legends role.")
+@app_commands.describe(count="Number of times to mention the role (max 20)")
+async def lol(interaction: discord.Interaction, count: int = 1):
     """Mentions the League of Legends role."""
     role_id = 882335005093810248  # Replace with actual role ID
-    role = ctx.guild.get_role(role_id)
+    role = interaction.guild.get_role(role_id)
 
     if not role:
         embed = discord.Embed(title="❌ Error", description="Role not found!", color=discord.Color.red())
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
         return
 
     if count > 20:
-        await ctx.send("⚠ Please enter a number **20 or lower**.")
+        embed = discord.Embed(title="⚠ Limit Exceeded", description="Please enter a number **20 or lower**.", color=discord.Color.orange())
+        await interaction.response.send_message(embed=embed)
         return
 
+    await interaction.response.defer()  # Defer response to prevent timeout
+
     for _ in range(count):
-        await ctx.send(f"{role.mention} Get on you pieces of shit", allowed_mentions=discord.AllowedMentions(roles=True))
+        await interaction.channel.send(f"{role.mention} Get on you pieces of shit", allowed_mentions=discord.AllowedMentions(roles=True))
         await asyncio.sleep(0.75)
 
-@bot.command()
-async def spam(ctx, user: discord.Member, count: int):
+    await interaction.followup.send(f"✅ Mentioned {role.mention} {count} times.")
+
+
+@tree.command(name="spam", description="Mentions a user multiple times.")
+@app_commands.describe(user="The user to mention", count="Number of times to mention the user (max 20)")
+async def spam(interaction: discord.Interaction, user: discord.Member, count: int):
     """Mentions a user multiple times."""
     if count > 20:
-        embed = discord.Embed(title='⚠ Limit Exceeded', description='Please enter a number **20 or lower**.', color=discord.Color.red())
-        await ctx.send(embed=embed)
+        embed = discord.Embed(title="⚠ Limit Exceeded", description="Please enter a number **20 or lower**.", color=discord.Color.red())
+        await interaction.response.send_message(embed=embed)
         return
 
+    await interaction.response.defer()  # Prevents timeout while executing
+
     for _ in range(count):
-        await ctx.send(f"{user.mention} wya")
-        await asyncio.sleep(0.5)
+        await interaction.channel.send(f"{user.mention} wya")
+        await asyncio.sleep(0.75)
+
+    await interaction.followup.send(f"✅ Spammed {user.mention} {count} times.")
 
 @bot.event
 async def on_member_join(member):
@@ -193,19 +205,24 @@ league_champions = [
     "Zyra"
 ]
 
-@bot.command()
-async def champ(ctx):
+@tree.command(name="champ", description="Randomly selects a League of Legends champion.")
+async def champ(interaction: discord.Interaction):
     """Randomly selects a League of Legends champion."""
     champion = random.choice(league_champions)
-    embed = discord.Embed(title="🎮 Random League Champion", description=f"Your champion is: **{champion}**!", color=discord.Color.purple())
-    await ctx.send(embed=embed)
+    embed = discord.Embed(
+        title="🎮 Random League Champion",
+        description=f"Your champion is: **{champion}**!",
+        color=discord.Color.purple()
+    )
+    await interaction.response.send_message(embed=embed)
 
-@bot.command()
-async def leaderboard(ctx):
+
+@tree.command(name="leaderboard", description="Displays the top 10 users based on level first, then XP as a tiebreaker.")
+async def leaderboard(interaction: discord.Interaction):
     """Displays the top 10 users based on level first, then XP as a tiebreaker."""
     if not xp_data:
         embed = discord.Embed(title="🏆 Leaderboard", description="No XP data available yet!", color=discord.Color.orange())
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
         return
 
     # Sort by level first, then by XP (highest to lowest)
@@ -220,139 +237,163 @@ async def leaderboard(ctx):
         leaderboard_text += f"**{rank}. {user.name}** - Level {data['level']} ({data['xp']} XP)\n"
 
     embed = discord.Embed(title="🏆 Dumbass Leaderboard", description=leaderboard_text, color=discord.Color.gold())
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
-@bot.command()
-async def ward(ctx):
+@tree.command(name="ward", description="Deletes your command message and replies with 'ward'.")
+async def ward(interaction: discord.Interaction):
     """Deletes the user's command message and replies."""
     try:
-        await ctx.message.delete()  # Delete the command message
-        await ctx.send(f"nigward")
+        await interaction.response.defer(ephemeral=True)  # Defer response to prevent timeout
+        await interaction.delete_original_response()  # Delete the interaction message
+        await interaction.channel.send("nigward")  # Send the reply
     except discord.Forbidden:
-        await ctx.send("❌ I don't have permission to delete messages!")
+        await interaction.followup.send("❌ I don't have permission to delete messages!", ephemeral=True)
     except discord.HTTPException:
-        await ctx.send("❌ Failed to delete the message.")
+        await interaction.followup.send("❌ Failed to delete the message.", ephemeral=True)
+
 
 queues = {}
 thumbnails = {}
 
 # Function to play next song
-def play_next(ctx):
-    if queues[ctx.guild.id]:
-        next_song = queues[ctx.guild.id].pop(0)
-        ctx.voice_client.play(discord.FFmpegPCMAudio(next_song['url'], executable='ffmpeg'), after=lambda e: play_next(ctx))
+def play_next(interaction: discord.Interaction):
+    if queues.get(interaction.guild.id):
+        next_song = queues[interaction.guild.id].pop(0)
+        interaction.guild.voice_client.play(
+            discord.FFmpegPCMAudio(next_song['url'], executable='ffmpeg'),
+            after=lambda e: play_next(interaction)
+        )
         embed = discord.Embed(title='Now Playing', description=next_song['title'], color=discord.Color.green())
         embed.set_thumbnail(url=next_song['thumbnail'])
-        asyncio.run_coroutine_threadsafe(ctx.send(embed=embed), bot.loop)
+        asyncio.run_coroutine_threadsafe(interaction.channel.send(embed=embed), bot.loop)
     else:
-        asyncio.run_coroutine_threadsafe(auto_disconnect(ctx), bot.loop)
+        asyncio.run_coroutine_threadsafe(auto_disconnect(interaction), bot.loop)
 
 # Function to auto-disconnect
-timer_tasks = {}
-async def auto_disconnect(ctx):
+async def auto_disconnect(interaction: discord.Interaction):
     await asyncio.sleep(120)
-    if not ctx.voice_client.is_playing():
-        await ctx.voice_client.disconnect()
-        queues[ctx.guild.id] = []
+    if not interaction.guild.voice_client.is_playing():
+        await interaction.guild.voice_client.disconnect()
+        queues[interaction.guild.id] = []
 
-@bot.command()
-async def play(ctx, url: str):
-    if ctx.guild.id not in queues:
-        queues[ctx.guild.id] = []
+@tree.command(name="play", description="Plays a song from the given URL.")
+@app_commands.describe(url="YouTube URL of the song to play")
+async def play(interaction: discord.Interaction, url: str):
+    """Plays a song or adds it to the queue if another song is playing."""
+    if interaction.guild.id not in queues:
+        queues[interaction.guild.id] = []
     
     ydl_opts = {'format': 'bestaudio', 'noplaylist': True}
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
         song_info = {'url': info['url'], 'title': info['title'], 'thumbnail': info['thumbnail']}
     
-    if not ctx.voice_client:
-        vc = await ctx.author.voice.channel.connect()
+    if not interaction.guild.voice_client:
+        vc = await interaction.user.voice.channel.connect()
     else:
-        vc = ctx.voice_client
+        vc = interaction.guild.voice_client
     
     if not vc.is_playing():
-        vc.play(discord.FFmpegPCMAudio(song_info['url'], executable='ffmpeg'), after=lambda e: play_next(ctx))
+        vc.play(
+            discord.FFmpegPCMAudio(song_info['url'], executable='ffmpeg'),
+            after=lambda e: play_next(interaction)
+        )
         embed = discord.Embed(title='Now Playing', description=song_info['title'], color=discord.Color.green())
         embed.set_thumbnail(url=song_info['thumbnail'])
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
     else:
-        queues[ctx.guild.id].append(song_info)
+        queues[interaction.guild.id].append(song_info)
         embed = discord.Embed(title='Added to Queue', description=song_info['title'], color=discord.Color.blue())
         embed.set_thumbnail(url=song_info['thumbnail'])
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
-@bot.command()
-async def queue(ctx):
-    if ctx.guild.id in queues and queues[ctx.guild.id]:
+
+@tree.command(name="queue", description="Displays the current song queue.")
+async def queue(interaction: discord.Interaction):
+    """Displays the current song queue."""
+    if interaction.guild.id in queues and queues[interaction.guild.id]:
         embed = discord.Embed(title='Current Queue', color=discord.Color.blue())
-        for i, song in enumerate(queues[ctx.guild.id]):
+
+        for i, song in enumerate(queues[interaction.guild.id]):
             embed.add_field(name=f'{i+1}. {song["title"]}', value=' ', inline=False)
             embed.set_thumbnail(url=song['thumbnail'])
-        await ctx.send(embed=embed)
+
+        await interaction.response.send_message(embed=embed)
     else:
         embed = discord.Embed(title='Queue Empty', description='The queue is empty.', color=discord.Color.red())
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
-@bot.command()
-async def skip(ctx):
-    if ctx.voice_client and ctx.voice_client.is_playing():
-        ctx.voice_client.stop()
-        play_next(ctx)
+
+@tree.command(name="skip", description="Skips the current song and plays the next one in the queue.")
+async def skip(interaction: discord.Interaction):
+    """Skips the current song and plays the next one in the queue."""
+    if interaction.guild.voice_client and interaction.guild.voice_client.is_playing():
+        interaction.guild.voice_client.stop()
+        play_next(interaction)
         embed = discord.Embed(title='Skipped', description='Skipped to the next song.', color=discord.Color.orange())
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
     else:
         embed = discord.Embed(title='No Song Playing', description='No song is currently playing.', color=discord.Color.red())
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
-@bot.command()
-async def stop(ctx):
-    if ctx.voice_client and ctx.voice_client.is_playing():
-        ctx.voice_client.pause()
-        embed = discord.Embed(title='Paused', description='Music paused.', color=discord.Color.orange())
-        await ctx.send(embed=embed)
+
+@tree.command(name="stop", description="Pauses the current song.")
+async def stop(interaction: discord.Interaction):
+    """Pauses the current song."""
+    if interaction.guild.voice_client and interaction.guild.voice_client.is_playing():
+        interaction.guild.voice_client.pause()
+        embed = discord.Embed(title="Paused", description="Music paused.", color=discord.Color.orange())
+        await interaction.response.send_message(embed=embed)
     else:
-        embed = discord.Embed(title='No Music Playing', description='No music is playing to pause.', color=discord.Color.red())
-        await ctx.send(embed=embed)
+        embed = discord.Embed(title="No Music Playing", description="No music is playing to pause.", color=discord.Color.red())
+        await interaction.response.send_message(embed=embed)
 
-@bot.command()
-async def start(ctx):
-    if ctx.voice_client and ctx.voice_client.is_paused():
-        ctx.voice_client.resume()
-        embed = discord.Embed(title='Started', description='Music resumed.', color=discord.Color.green())
-        await ctx.send(embed=embed)
+
+@tree.command(name="start", description="Resumes the paused music.")
+async def start(interaction: discord.Interaction):
+    """Resumes the paused music."""
+    if interaction.guild.voice_client and interaction.guild.voice_client.is_paused():
+        interaction.guild.voice_client.resume()
+        embed = discord.Embed(title="Started", description="Music resumed.", color=discord.Color.green())
+        await interaction.response.send_message(embed=embed)
     else:
-        embed = discord.Embed(title='Not Started', description='No music is currently paused.', color=discord.Color.red())
-        await ctx.send(embed=embed)
+        embed = discord.Embed(title="Not Started", description="No music is currently paused.", color=discord.Color.red())
+        await interaction.response.send_message(embed=embed)
 
-@bot.command()
-async def leave(ctx):
-    if ctx.voice_client:
-        await ctx.voice_client.disconnect()
-        queues[ctx.guild.id] = []
-        embed = discord.Embed(title='Liam has ran away.', description='Bot has left the voice channel and cleared the queue.', color=discord.Color.purple())
-        await ctx.send(embed=embed)
+
+@tree.command(name="leave", description="Makes the bot leave the voice channel and clears the queue.")
+async def leave(interaction: discord.Interaction):
+    """Makes the bot leave the voice channel and clears the queue."""
+    if interaction.guild.voice_client:
+        await interaction.guild.voice_client.disconnect()
+        queues[interaction.guild.id] = []
+        embed = discord.Embed(title="Liam has ran away.", description="Bot has left the voice channel and cleared the queue.", color=discord.Color.purple())
+        await interaction.response.send_message(embed=embed)
     else:
-        embed = discord.Embed(title='Not Connected', description='I am not connected to a voice channel.', color=discord.Color.red())
-        await ctx.send(embed=embed)
+        embed = discord.Embed(title="Not Connected", description="I am not connected to a voice channel.", color=discord.Color.red())
+        await interaction.response.send_message(embed=embed)
 
-@bot.command()
-async def help(ctx):
+
+@tree.command(name="help", description="Displays a list of available commands.")
+async def help(interaction: discord.Interaction):
+    """Displays a list of available commands."""
     embed = discord.Embed(title="Bot Commands", description="Here are the available commands:", color=discord.Color.blue())
-    embed.add_field(name="!play <url>", value="Plays a song from the given URL.", inline=False)
-    embed.add_field(name="!queue", value="Shows the current music queue.", inline=False)
-    embed.add_field(name="!skip", value="Skips the current song.", inline=False)
-    embed.add_field(name="!stop", value="Pauses the music.", inline=False)
-    embed.add_field(name="!start", value="Resumes paused music.", inline=False)
-    embed.add_field(name="!leave", value="Clears the queue and makes the bot leave the voice channel.", inline=False)
-    embed.add_field(name="!champ", value="Selects a random champion from League of Legends.", inline=False)
-    embed.add_field(name="!ward", value="Wards the river", inline=False)
-    embed.add_field(name="!level", value="Shows your xp level.", inline=False)
-    embed.add_field(name="!leaderboard", value="Shows the leaders in xp in this server.", inline=False)
-    embed.add_field(name="!spam <user> <num>", value="Spams a user a specified number of times.", inline=False)
-    embed.add_field(name="!lol <num>", value="Pings the League of Legends role.", inline=False)
-    embed.set_footer(text="Please let me know any more commands you would like to see.")
-    
-    await ctx.send(embed=embed)
+    embed.add_field(name="/play <url>", value="Plays a song from the given URL.", inline=False)
+    embed.add_field(name="/queue", value="Shows the current music queue.", inline=False)
+    embed.add_field(name="/skip", value="Skips the current song.", inline=False)
+    embed.add_field(name="/stop", value="Pauses the music.", inline=False)
+    embed.add_field(name="/start", value="Resumes paused music.", inline=False)
+    embed.add_field(name="/leave", value="Clears the queue and makes the bot leave the voice channel.", inline=False)
+    embed.add_field(name="/champ", value="Selects a random champion from League of Legends.", inline=False)
+    embed.add_field(name="/ward", value="Wards the river.", inline=False)
+    embed.add_field(name="/level", value="Shows your XP level.", inline=False)
+    embed.add_field(name="/leaderboard", value="Shows the leaders in XP in this server.", inline=False)
+    embed.add_field(name="/spam <user> <num>", value="Spams a user a specified number of times.", inline=False)
+    embed.add_field(name="/lol <num>", value="Pings the League of Legends role.", inline=False)
+    embed.set_footer(text="Please let me know any more commands you would like to see!")
+
+    await interaction.response.send_message(embed=embed)
+
 
         
 print(f"Token: {TOKEN[:5]}********")
