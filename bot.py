@@ -25,7 +25,7 @@ intents.messages = True
 intents.guilds = True
 intents.voice_states = True
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix='!', intents=intents, help_command=None)
 
 xp_data = {}
 voice_time = {}
@@ -146,17 +146,15 @@ async def lol(ctx, count: int = 1):
         await asyncio.sleep(0.75)
 
 @bot.command()
-async def spam(ctx, count: int):
-    """Mentions a specific user multiple times."""
-    user_id = 310933291928649730  # Replace with actual user ID
-    user = await bot.fetch_user(user_id)
-
+async def spam(ctx, user: discord.Member, count: int):
+    """Mentions a user multiple times."""
     if count > 20:
-        await ctx.send("⚠ Please enter a number **20 or lower**.")
+        embed = discord.Embed(title='⚠ Limit Exceeded', description='Please enter a number **20 or lower**.', color=discord.Color.red())
+        await ctx.send(embed=embed)
         return
 
     for _ in range(count):
-        await ctx.send(f"{user.mention} I NEED MASTER RIGHT NOW")
+        await ctx.send(f"{user.mention} wya")
         await asyncio.sleep(0.5)
 
 @bot.event
@@ -344,6 +342,26 @@ async def leave(ctx):
     else:
         embed = discord.Embed(title='Not Connected', description='I am not connected to a voice channel.', color=discord.Color.red())
         await ctx.send(embed=embed)
+
+@bot.command()
+async def help(ctx):
+    embed = discord.Embed(title="Bot Commands", description="Here are the available commands:", color=discord.Color.blue())
+    embed.add_field(name="!play <url>", value="Plays a song from the given URL.", inline=False)
+    embed.add_field(name="!queue", value="Shows the current music queue.", inline=False)
+    embed.add_field(name="!skip", value="Skips the current song.", inline=False)
+    embed.add_field(name="!stop", value="Pauses the music.", inline=False)
+    embed.add_field(name="!start", value="Resumes paused music.", inline=False)
+    embed.add_field(name="!leave", value="Clears the queue and makes the bot leave the voice channel.", inline=False)
+    embed.add_field(name="!champ", value="Selects a random champion from League of Legends.", inline=False)
+    embed.add_field(name="!ward", value="Wards the river", inline=False)
+    embed.add_field(name="!level", value="Shows your xp level.", inline=False)
+    embed.add_field(name="!leaderboard", value="Shows the leaders in xp in this server.", inline=False)
+    embed.add_field(name="!spam <user> <num>", value="Spams a user a specified number of times.", inline=False)
+    embed.add_field(name="!lol <num>", value="Pings the League of Legends role.", inline=False)
+    embed.set_footer(text="Please let me know any more commands you would like to see.")
+    
+    await ctx.send(embed=embed)
+
         
 print(f"Token: {TOKEN[:5]}********")
 bot.run(TOKEN)
