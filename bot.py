@@ -222,12 +222,16 @@ async def ward(ctx):
         await ctx.send("❌ Failed to delete the message.")
 
 queues = {}
+thumbnails = {}
 
 # Function to play next song
 def play_next(ctx):
     if queues[ctx.guild.id]:
         next_song = queues[ctx.guild.id].pop(0)
-        ctx.voice_client.play(discord.FFmpegPCMAudio(next_song, executable='ffmpeg'), after=lambda e: play_next(ctx))
+        ctx.voice_client.play(discord.FFmpegPCMAudio(next_song['url'], executable='ffmpeg'), after=lambda e: play_next(ctx))
+        embed = discord.Embed(title='Now Playing', description=next_song['title'], color=discord.Color.green())
+        embed.set_thumbnail(url=next_song['thumbnail'])
+        asyncio.run_coroutine_threadsafe(ctx.send(embed=embed), bot.loop)
     else:
         asyncio.run_coroutine_threadsafe(auto_disconnect(ctx), bot.loop)
 
@@ -247,8 +251,7 @@ async def play(ctx, url: str):
     ydl_opts = {'format': 'bestaudio', 'noplaylist': True}
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
-        url2 = info['url']
-        title = info['title']
+        song_info = {'url': info['url'], 'title': info['title'], 'thumbnail': info['thumbnail']}
     
     if not ctx.voice_client:
         vc = await ctx.author.voice.channel.connect()
@@ -256,47 +259,59 @@ async def play(ctx, url: str):
         vc = ctx.voice_client
     
     if not vc.is_playing():
-        vc.play(discord.FFmpegPCMAudio(url2, executable='ffmpeg'), after=lambda e: play_next(ctx))
-        await ctx.send(f'Now playing: {title}')
+        vc.play(discord.FFmpegPCMAudio(song_info['url'], executable='ffmpeg'), after=lambda e: play_next(ctx))
+        embed = discord.Embed(title='Now Playing', description=song_info['title'], color=discord.Color.green())
+        embed.set_thumbnail(url=song_info['thumbnail'])
+        await ctx.send(embed=embed)
     else:
-        queues[ctx.guild.id].append(url2)
-        await ctx.send(f'Added to queue: {title}')
+        queues[ctx.guild.id].append(song_info)
+        embed = discord.Embed(title='Added to Queue', description=song_info['title'], color=discord.Color.blue())
+        embed.set_thumbnail(url=song_info['thumbnail'])
+        await ctx.send(embed=embed)
 
 @bot.command()
 async def queue(ctx):
     if ctx.guild.id in queues and queues[ctx.guild.id]:
-        queue_list = '\n'.join([f'{i+1}. {song}' for i, song in enumerate(queues[ctx.guild.id])])
-        embed = discord.Embed(title='Current Queue', description=queue_list, color=discord.Color.blue())
+        embed = discord.Embed(title='Current Queue', color=discord.Color.blue())
+        for i, song in enumerate(queues[ctx.guild.id]):
+            embed.add_field(name=f'{i+1}. {song["title"]}', value=' ', inline=False)
+            embed.set_thumbnail(url=song['thumbnail'])
         await ctx.send(embed=embed)
     else:
-        await ctx.send('The queue is empty.')
+        embed = discord.Embed(title='Queue Empty', description='The queue is empty.', color=discord.Color.red())
+        await ctx.send(embed=embed)
 
 @bot.command()
 async def skip(ctx):
     if ctx.voice_client and ctx.voice_client.is_playing():
         ctx.voice_client.stop()
         play_next(ctx)
-        await ctx.send('Skipped to the next song.')
+        embed = discord.Embed(title='Skipped', description='Skipped to the next song.', color=discord.Color.orange())
+        await ctx.send(embed=embed)
     else:
-        await ctx.send('No song is currently playing.')
+        embed = discord.Embed(title='No Song Playing', description='No song is currently playing.', color=discord.Color.red())
+        await ctx.send(embed=embed)
+
+@bot.command()
+async def stop(ctx):
+    if ctx.voice_client and ctx.voice_client.is_playing():
+        ctx.voice_client.pause()
+        embed = discord.Embed(title='Paused', description='Music paused.', color=discord.Color.orange())
+        await ctx.send(embed=embed)
+    else:
+        embed = discord.Embed(title='No Music Playing', description='No music is playing to pause.', color=discord.Color.red())
+        await ctx.send(embed=embed)
 
 @bot.command()
 async def leave(ctx):
     if ctx.voice_client:
         await ctx.voice_client.disconnect()
         queues[ctx.guild.id] = []
-        await ctx.send('Bot has left the voice channel and cleared the queue.')
+        embed = discord.Embed(title='Liam has ran away.', description='Bot has left the voice channel and cleared the queue.', color=discord.Color.purple())
+        await ctx.send(embed=embed)
     else:
-        await ctx.send('I am not connected to a voice channel.')
-
-@bot.command()
-async def stop(ctx):
-    """Stops the currently playing audio."""
-    if ctx.voice_client and ctx.voice_client.is_playing():
-        ctx.voice_client.stop()
-        await ctx.send("⏹️ Stopped playing.")
-    else:
-        await ctx.send("❌ No audio is currently playing.")
+        embed = discord.Embed(title='Not Connected', description='I am not connected to a voice channel.', color=discord.Color.red())
+        await ctx.send(embed=embed)
         
 print(f"Token: {TOKEN[:5]}********")
 bot.run(TOKEN)
