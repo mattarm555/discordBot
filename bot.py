@@ -280,8 +280,8 @@ def play_next(interaction: discord.Interaction):
 
 # Function to auto-disconnect
 async def auto_disconnect(interaction: discord.Interaction):
-    """Automatically disconnects the bot if no song is playing after 2 minutes."""
-    await asyncio.sleep(10)  # Wait for 2 minutes
+    """Automatically disconnects the bot if no song is playing after 1 minute."""
+    await asyncio.sleep(60)  # Wait for 2 minutes
 
     if interaction.guild.voice_client and not interaction.guild.voice_client.is_playing():
         await interaction.guild.voice_client.disconnect()
