@@ -160,7 +160,8 @@ async def spam(interaction: discord.Interaction, user: discord.Member, count: in
         await interaction.channel.send(f"{user.mention} wya")
         await asyncio.sleep(0.75)
 
-    await interaction.followup.send(f"✅ Spammed {user.mention} {count} times.")
+    # No followup message is sent after spamming
+
 
 @bot.event
 async def on_member_join(member):
@@ -333,12 +334,20 @@ async def skip(interaction: discord.Interaction):
     """Skips the current song and plays the next one in the queue."""
     if interaction.guild.voice_client and interaction.guild.voice_client.is_playing():
         interaction.guild.voice_client.stop()
+
+        # Check if queue is empty
+        if not queues.get(interaction.guild.id):  # If no songs left in queue
+            embed = discord.Embed(title='End of Queue', description='No more songs left to play.', color=discord.Color.red())
+            await interaction.response.send_message(embed=embed)
+            return
+        
         play_next(interaction)
         embed = discord.Embed(title='Skipped', description='Skipped to the next song.', color=discord.Color.orange())
         await interaction.response.send_message(embed=embed)
     else:
         embed = discord.Embed(title='No Song Playing', description='No song is currently playing.', color=discord.Color.red())
         await interaction.response.send_message(embed=embed)
+
 
 
 @tree.command(name="stop", description="Pauses the current song.")
