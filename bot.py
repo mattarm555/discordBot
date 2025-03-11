@@ -9,6 +9,7 @@ import wave
 import pyaudio
 import aiohttp
 import yt_dlp
+import yt_dlp as youtube_dl
 from gtts import gTTS
 from discord.ext import commands
 
@@ -220,72 +221,73 @@ async def ward(ctx):
     except discord.HTTPException:
         await ctx.send("❌ Failed to delete the message.")
 
-@bot.command()
-async def join(ctx):
-    """Joins the user's voice channel."""
-    if ctx.author.voice:
-        channel = ctx.author.voice.channel
-        await channel.connect()
-        await ctx.send("🔊 Joined the voice channel!")
-    else:
-        await ctx.send("❌ You need to be in a voice channel!")
+queues = {}
 
-@bot.command()
-async def leave(ctx):
-    """Disconnects from the voice channel."""
-    if ctx.voice_client:
-        await ctx.voice_client.disconnect()
-        await ctx.send("👋 Left the voice channel.")
+# Function to play next song
+def play_next(ctx):
+    if queues[ctx.guild.id]:
+        next_song = queues[ctx.guild.id].pop(0)
+        ctx.voice_client.play(discord.FFmpegPCMAudio(next_song, executable='ffmpeg'), after=lambda e: play_next(ctx))
     else:
-        await ctx.send("❌ I'm not in a voice channel!")
+        asyncio.run_coroutine_threadsafe(auto_disconnect(ctx), bot.loop)
+
+# Function to auto-disconnect
+timer_tasks = {}
+async def auto_disconnect(ctx):
+    await asyncio.sleep(120)
+    if not ctx.voice_client.is_playing():
+        await ctx.voice_client.disconnect()
+        queues[ctx.guild.id] = []
 
 @bot.command()
 async def play(ctx, url: str):
-    """Plays audio from a YouTube video."""
-    if not ctx.author.voice:
-        await ctx.send("❌ You need to be in a voice channel!")
-        return
-
-    vc = ctx.voice_client
-    if not vc:
+    if ctx.guild.id not in queues:
+        queues[ctx.guild.id] = []
+    
+    ydl_opts = {'format': 'bestaudio', 'noplaylist': True}
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+        url2 = info['url']
+        title = info['title']
+    
+    if not ctx.voice_client:
         vc = await ctx.author.voice.channel.connect()
+    else:
+        vc = ctx.voice_client
+    
+    if not vc.is_playing():
+        vc.play(discord.FFmpegPCMAudio(url2, executable='ffmpeg'), after=lambda e: play_next(ctx))
+        await ctx.send(f'Now playing: {title}')
+    else:
+        queues[ctx.guild.id].append(url2)
+        await ctx.send(f'Added to queue: {title}')
 
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': 'song',  # Ensures the file is named "song"
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-    }
+@bot.command()
+async def queue(ctx):
+    if ctx.guild.id in queues and queues[ctx.guild.id]:
+        queue_list = '\n'.join([f'{i+1}. {song}' for i, song in enumerate(queues[ctx.guild.id])])
+        embed = discord.Embed(title='Current Queue', description=queue_list, color=discord.Color.blue())
+        await ctx.send(embed=embed)
+    else:
+        await ctx.send('The queue is empty.')
 
-    try:
-        await ctx.send("🎵 Downloading audio...")
+@bot.command()
+async def skip(ctx):
+    if ctx.voice_client and ctx.voice_client.is_playing():
+        ctx.voice_client.stop()
+        play_next(ctx)
+        await ctx.send('Skipped to the next song.')
+    else:
+        await ctx.send('No song is currently playing.')
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-
-        filename = "song.mp3"  # Set filename explicitly
-
-        print(f"✅ Downloaded file: {filename}")
-        print(f"🔍 Checking if file exists: {os.path.isfile(filename)}")
-
-        # Ensure file exists before playing
-        if not os.path.isfile(filename):
-            await ctx.send("❌ Error: The file was not found after download.")
-            return
-
-        await ctx.send(f"🎶 Now playing: {info['title']}")
-
-        vc.play(discord.FFmpegPCMAudio(filename), after=lambda e: print("✅ Finished playing."))
-
-        while vc.is_playing():
-            await asyncio.sleep(1)
-
-    except Exception as e:
-        print(f"❌ Error: {e}")
-        await ctx.send("⚠️ An error occurred while trying to play audio.")
+@bot.command()
+async def leave(ctx):
+    if ctx.voice_client:
+        await ctx.voice_client.disconnect()
+        queues[ctx.guild.id] = []
+        await ctx.send('Bot has left the voice channel and cleared the queue.')
+    else:
+        await ctx.send('I am not connected to a voice channel.')
 
 @bot.command()
 async def stop(ctx):
@@ -295,5 +297,6 @@ async def stop(ctx):
         await ctx.send("⏹️ Stopped playing.")
     else:
         await ctx.send("❌ No audio is currently playing.")
+        
 print(f"Token: {TOKEN[:5]}********")
 bot.run(TOKEN)
