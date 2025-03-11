@@ -26,10 +26,10 @@ intents.guilds = True
 intents.voice_states = True
 
 bot = commands.Bot(command_prefix='!', intents=intents, help_command=None)
+tree = bot.tree
 
 xp_data = {}
 voice_time = {}
-XP_PER_MINUTE = 1
 
 @bot.event
 async def on_ready():
@@ -97,14 +97,14 @@ async def on_message(message):
 
     await bot.process_commands(message)  # Process other commands
 
-@bot.command()
-async def level(ctx):
+@tree.command(name="level", description="Displays your current XP level.")
+async def level(interaction: discord.Interaction):
     """Command to check user's level."""
-    user_id = str(ctx.author.id)
+    user_id = str(interaction.user.id)
     if user_id not in xp_data:
         embed = discord.Embed(
             title="🎮 Level Check",
-            description=f"{ctx.author.mention}, you haven't gained any XP yet!",
+            description=f"{interaction.user.mention}, you haven't gained any XP yet!",
             color=discord.Color.orange()
         )
     else:
@@ -112,10 +112,11 @@ async def level(ctx):
         level = xp_data[user_id]["level"]
         embed = discord.Embed(
             title="🏆 XP Level",
-            description=f"{ctx.author.mention}, you are level **{level}** with **{xp} XP**!",
+            description=f"{interaction.user.mention}, you are level **{level}** with **{xp} XP**!",
             color=discord.Color.green()
         )
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
+
 
 @bot.command()
 async def lol(ctx, count: int = 1):
