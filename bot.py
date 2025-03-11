@@ -147,18 +147,22 @@ async def lol(interaction: discord.Interaction, count: int = 1):
 
 @tree.command(name="spam", description="Mentions a user multiple times.")
 @app_commands.describe(user="The user to mention", count="Number of times to mention the user (max 20)")
-async def spam(interaction: discord.Interaction, user: discord.Member, count: int):
+async def spam(interaction: discord.Interaction, user: discord.Member, count: int = 1):
     """Mentions a user multiple times."""
+    
     if count > 20:
         embed = discord.Embed(title="⚠ Limit Exceeded", description="Please enter a number **20 or lower**.", color=discord.Color.red())
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
         return
 
-    await interaction.response.defer()  # Prevents timeout while executing
+    # Send the first ping immediately
+    await interaction.response.send_message(f"{user.mention} wya")
 
-    for _ in range(count):
-        await interaction.channel.send(f"{user.mention} wya")
+    # Loop for the remaining pings (count - 1 times)
+    for _ in range(count - 1):
         await asyncio.sleep(0.75)
+        await interaction.channel.send(f"{user.mention} wya")
+
 
     # No followup message is sent after spamming
 
