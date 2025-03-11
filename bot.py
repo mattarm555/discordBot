@@ -281,6 +281,8 @@ async def auto_disconnect(interaction: discord.Interaction):
 @app_commands.describe(url="YouTube URL of the song to play")
 async def play(interaction: discord.Interaction, url: str):
     """Plays a song or adds it to the queue if another song is playing."""
+    await interaction.response.defer()  # Prevents "application did not respond" error
+
     if interaction.guild.id not in queues:
         queues[interaction.guild.id] = []
     
@@ -301,12 +303,13 @@ async def play(interaction: discord.Interaction, url: str):
         )
         embed = discord.Embed(title='Now Playing', description=song_info['title'], color=discord.Color.green())
         embed.set_thumbnail(url=song_info['thumbnail'])
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)  # Use followup instead of response
     else:
         queues[interaction.guild.id].append(song_info)
         embed = discord.Embed(title='Added to Queue', description=song_info['title'], color=discord.Color.blue())
         embed.set_thumbnail(url=song_info['thumbnail'])
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)  # Use followup instead of response
+
 
 
 @tree.command(name="queue", description="Displays the current song queue.")
