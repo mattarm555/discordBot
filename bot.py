@@ -90,22 +90,6 @@ async def on_message(message):
 
     await bot.process_commands(message)  # Process other commands
 
-@bot.event
-async def on_voice_state_update(member, before, after):
-    guild_id = member.guild.id
-    user_id = str(member.id)
-    
-    if user_id not in xp_data:
-        xp_data[user_id] = {"xp": 0, "level": 0}
-    
-    if before.channel is None and after.channel is not None:  # User joined VC
-        voice_time[user_id] = datetime.utcnow()
-    elif before.channel is not None and after.channel is None:  # User left VC
-        if user_id in voice_time:
-            time_spent = (datetime.utcnow() - voice_time[user_id]).total_seconds() / 60  # Convert to minutes
-            xp_data[user_id]["xp"] += int(time_spent * XP_PER_MINUTE)
-            del voice_time[user_id]
-
 @bot.command()
 async def level(ctx):
     """Command to check user's level."""
