@@ -259,17 +259,24 @@ thumbnails = {}
 
 # Function to play next song
 def play_next(interaction: discord.Interaction):
-    if queues.get(interaction.guild.id):
+    """Plays the next song in the queue, or disconnects if the queue is empty."""
+    if not interaction.guild.voice_client:  # Check if bot is still connected
+        return  # Exit function if bot is not connected
+
+    if queues.get(interaction.guild.id):  # Check if queue is not empty
         next_song = queues[interaction.guild.id].pop(0)
-        interaction.guild.voice_client.play(
-            discord.FFmpegPCMAudio(next_song['url'], executable='ffmpeg'),
-            after=lambda e: play_next(interaction)
-        )
-        embed = discord.Embed(title='Now Playing', description=next_song['title'], color=discord.Color.green())
-        embed.set_thumbnail(url=next_song['thumbnail'])
-        asyncio.run_coroutine_threadsafe(interaction.channel.send(embed=embed), bot.loop)
+
+        if interaction.guild.voice_client.is_connected():  # Ensure bot is still in VC
+            interaction.guild.voice_client.play(
+                discord.FFmpegPCMAudio(next_song['url'], executable='ffmpeg'),
+                after=lambda e: play_next(interaction)
+            )
+            embed = discord.Embed(title='Now Playing', description=next_song['title'], color=discord.Color.green())
+            embed.set_thumbnail(url=next_song['thumbnail'])
+            asyncio.run_coroutine_threadsafe(interaction.channel.send(embed=embed), bot.loop)
     else:
         asyncio.run_coroutine_threadsafe(auto_disconnect(interaction), bot.loop)
+
 
 # Function to auto-disconnect
 async def auto_disconnect(interaction: discord.Interaction):
