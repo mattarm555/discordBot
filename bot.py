@@ -13,6 +13,7 @@ import yt_dlp as youtube_dl
 from gtts import gTTS
 from discord.ext import commands, tasks
 from datetime import datetime
+from discord import app_commands
 
 # Load bot token from environment variable
 TOKEN = os.getenv("TOKEN")  # Make sure TOKEN is set in your environment
