@@ -12,6 +12,7 @@ import yt_dlp
 import yt_dlp as youtube_dl
 from gtts import gTTS
 from discord.ext import commands, tasks
+from datetime import datetime
 
 # Load bot token from environment variable
 TOKEN = os.getenv("TOKEN")  # Make sure TOKEN is set in your environment
@@ -32,6 +33,7 @@ XP_PER_MINUTE = 1
 
 @bot.event
 async def on_ready():
+    await bot.change_presence(activity=discord.Game(name='CONTAINS LIAMS SOUL'))
     print(f"Logged in as {bot.user}")
 
 # Load XP data from a file (persistent storage)
