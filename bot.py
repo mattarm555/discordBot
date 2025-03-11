@@ -34,6 +34,12 @@ XP_PER_MINUTE = 1
 @bot.event
 async def on_ready():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name='!help'))
+    try:
+        synced = await tree.sync()
+        print(f"Synced {len(synced)} commands.")
+    except Exception as e:
+        print(f"Failed to sync commands: {e}")
+        
     print(f"Logged in as {bot.user}")
 
 # Load XP data from a file (persistent storage)
