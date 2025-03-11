@@ -280,10 +280,21 @@ def play_next(interaction: discord.Interaction):
 
 # Function to auto-disconnect
 async def auto_disconnect(interaction: discord.Interaction):
-    await asyncio.sleep(120)
-    if not interaction.guild.voice_client.is_playing():
+    """Automatically disconnects the bot if no song is playing after 2 minutes."""
+    await asyncio.sleep(10)  # Wait for 2 minutes
+
+    if interaction.guild.voice_client and not interaction.guild.voice_client.is_playing():
         await interaction.guild.voice_client.disconnect()
-        queues[interaction.guild.id] = []
+        queues[interaction.guild.id] = []  # Clear the queue
+
+        # Send embedded message
+        embed = discord.Embed(
+            title="Liam has ran away.",
+            description="",
+            color=discord.Color.purple()
+        )
+        await interaction.channel.send(embed=embed)
+
 
 @tree.command(name="play", description="Plays a song from the given URL.")
 @app_commands.describe(url="YouTube URL of the song to play")
