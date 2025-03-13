@@ -35,7 +35,7 @@ voice_time = {}
 @bot.event
 async def on_ready():
     await bot.wait_until_ready()  # Ensure bot is fully ready
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name='!help'))
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name='/help'))
     try:
         synced = await tree.sync()
         print(f"Synced {len(synced)} commands.")
