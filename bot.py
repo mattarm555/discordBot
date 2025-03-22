@@ -65,10 +65,21 @@ def get_xp_needed(level):
     """Returns the XP required to reach the next level."""
     return BASE_XP * (level + 1)  # XP increases with level
 
+
+excluded_channels = [
+    947702763146592307,
+    947706529811943475
+]
+
+
 @bot.event
 async def on_message(message):
     if message.author.bot:
         return  # Ignore bot messages
+
+    if message.channel.id in excluded_channels:
+        await bot.process_commands(message)  # Still allow commands
+        return
 
     user_id = str(message.author.id)
     if user_id not in xp_data:
