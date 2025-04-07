@@ -32,6 +32,16 @@ tree = bot.tree
 xp_data = {}
 voice_time = {}
 
+const mongoose = require('mongoose');
+
+mongoose.connect('mongodb+srv://<jengbeast>:<#Smokey0315>@cluster0.2rn8qiz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('✅ Connected to MongoDB!'))
+.catch(err => console.error('❌ MongoDB connection error:', err));
+
+
 @bot.event
 async def on_ready():
     await bot.wait_until_ready()  # Ensure bot is fully ready
