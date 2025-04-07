@@ -34,7 +34,7 @@ voice_time = {}
 
 const mongoose = require('mongoose');
 
-mongoose.connect('mongodb+srv://<jengbeast>:<#Smokey0315>@cluster0.2rn8qiz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
+mongoose.connect('mongodb+srv://<jengbeast>:<%23Smokey0315>@cluster0.2rn8qiz.mongodb.net/liambot_db?retryWrites=true&w=majority&appName=Cluster0', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
