@@ -82,7 +82,7 @@ def debug_command(command_name, user, **kwargs):
     if kwargs:
         print("\033[1;36mInput:\033[0m")
         for key, value in kwargs.items():
-            print(f"  {key.capitalize()}: {value}")
+            print(f"\033[1;31m  {key}: {value}\033[0m")  # 🔴 Red key-value lines
 
 
 @bot.event
