@@ -77,6 +77,13 @@ excluded_channels = [
     947706529811943475
 ]
 
+def debug_command(command_name, user, **kwargs):
+    print(f"\033[1;32m[COMMAND] /{command_name}\033[0m triggered by \033[1;33m{user.display_name}\033[0m")
+    if kwargs:
+        print("\033[1;36mInput:\033[0m")
+        for key, value in kwargs.items():
+            print(f"  {key.capitalize()}: {value}")
+
 
 @bot.event
 async def on_message(message):
@@ -117,6 +124,7 @@ async def on_message(message):
 
 @tree.command(name="level", description="Displays your current XP level.")
 async def level(interaction: discord.Interaction):
+    debug_command("level", interaction.user)
     """Command to check user's level."""
     user_id = str(interaction.user.id)
     if user_id not in xp_data:
@@ -139,6 +147,7 @@ async def level(interaction: discord.Interaction):
 @tree.command(name="lol", description="Mentions the League of Legends role.")
 @app_commands.describe(count="Number of times to mention the role (max 20)")
 async def lol(interaction: discord.Interaction, count: int = 1):
+    debug_command("lol", interaction.user, count=count)
     """Mentions the League of Legends role."""
     role_id = 882335005093810248  # Replace with actual role ID
     role = interaction.guild.get_role(role_id)
@@ -165,6 +174,7 @@ async def lol(interaction: discord.Interaction, count: int = 1):
 @tree.command(name="spam", description="Mentions a user multiple times.")
 @app_commands.describe(user="The user to mention", count="Number of times to mention the user (max 20)")
 async def spam(interaction: discord.Interaction, user: discord.Member, count: int = 1):
+    debug_command("spam", interaction.user, user=user.display_name, count=count)
     """Mentions a user multiple times."""
     
     if count > 20:
@@ -229,6 +239,7 @@ league_champions = [
 
 @tree.command(name="champ", description="Randomly selects a League of Legends champion.")
 async def champ(interaction: discord.Interaction):
+    debug_command("champ", interaction.user)
     """Randomly selects a League of Legends champion."""
     champion = random.choice(league_champions)
     embed = discord.Embed(
@@ -241,6 +252,7 @@ async def champ(interaction: discord.Interaction):
 
 @tree.command(name="leaderboard", description="Displays the top 10 users based on level first, then XP as a tiebreaker.")
 async def leaderboard(interaction: discord.Interaction):
+    debug_command("leaderboard", interaction.user)
     """Displays the top 10 users based on level first, then XP as a tiebreaker."""
     if not xp_data:
         embed = discord.Embed(title="🏆 Leaderboard", description="No XP data available yet!", color=discord.Color.orange())
@@ -263,6 +275,7 @@ async def leaderboard(interaction: discord.Interaction):
 
 @tree.command(name="ward", description="Deletes your command message and replies with 'ward'.")
 async def ward(interaction: discord.Interaction):
+    debug_command("ward", interaction.user)
     """Deletes the user's command message and replies."""
     try:
         await interaction.response.defer(ephemeral=True)  # Defer response to prevent timeout
@@ -320,8 +333,8 @@ async def auto_disconnect(interaction: discord.Interaction):
 @app_commands.describe(url="YouTube URL of the song to play")
 async def play(interaction: discord.Interaction, url: str):
     """Plays a song or adds it to the queue if another song is playing."""
-    await interaction.response.defer()  # Prevents "application did not respond" error
-
+    await interaction.response.defer()
+    debug_command("play", interaction.user, url=url)
     if interaction.guild.id not in queues:
         queues[interaction.guild.id] = []
     
@@ -353,6 +366,7 @@ async def play(interaction: discord.Interaction, url: str):
 
 @tree.command(name="queue", description="Displays the current song queue with pagination.")
 async def queue(interaction: discord.Interaction):
+    debug_command("queue", interaction.user)  # Replace "queue" with the command name
     """Displays the current song queue with pagination."""
     guild_id = interaction.guild.id
     song_queue = queues.get(guild_id, [])
@@ -420,6 +434,7 @@ async def queue(interaction: discord.Interaction):
 
 @tree.command(name="skip", description="Skips the current song and plays the next one in the queue.")
 async def skip(interaction: discord.Interaction):
+    debug_command("skip", interaction.user)
     """Skips the current song and lets the after= callback trigger play_next."""
     if interaction.guild.voice_client and interaction.guild.voice_client.is_playing():
         interaction.guild.voice_client.stop()  # This triggers after=play_next
@@ -434,6 +449,7 @@ async def skip(interaction: discord.Interaction):
 
 @tree.command(name="stop", description="Pauses the current song.")
 async def stop(interaction: discord.Interaction):
+    debug_command("stop", interaction.user)
     """Pauses the current song."""
     if interaction.guild.voice_client and interaction.guild.voice_client.is_playing():
         interaction.guild.voice_client.pause()
@@ -446,6 +462,7 @@ async def stop(interaction: discord.Interaction):
 
 @tree.command(name="start", description="Resumes the paused music.")
 async def start(interaction: discord.Interaction):
+    debug_command("start", interaction.user)
     """Resumes the paused music."""
     if interaction.guild.voice_client and interaction.guild.voice_client.is_paused():
         interaction.guild.voice_client.resume()
@@ -458,6 +475,7 @@ async def start(interaction: discord.Interaction):
 
 @tree.command(name="leave", description="Makes the bot leave the voice channel and clears the queue.")
 async def leave(interaction: discord.Interaction):
+    debug_command("leave", interaction.user)
     """Makes the bot leave the voice channel and clears the queue."""
     if interaction.guild.voice_client:
         await interaction.guild.voice_client.disconnect()
@@ -471,6 +489,7 @@ async def leave(interaction: discord.Interaction):
 
 @tree.command(name="help", description="Displays a list of available commands.")
 async def help(interaction: discord.Interaction):
+    debug_command("help", interaction.user)
     """Displays a list of available commands."""
     embed = discord.Embed(title="Bot Commands", description="Here are the available commands:", color=discord.Color.blue())
     embed.add_field(name="/play <url>", value="Plays a song from the given URL.", inline=False)
@@ -517,6 +536,21 @@ async def poll(
     option6_text: str = None, option6_emoji: str = None
 ):
     await interaction.response.defer()
+
+    debug_command(
+    "poll", interaction.user,
+    question=question,
+    duration=f"{duration_minutes} minutes",
+    anonymous=anonymous,
+    **{f"option{i+1}": f"{text} {emoji}" for i, (text, emoji) in enumerate([
+        (option1_text, option1_emoji),
+        (option2_text, option2_emoji),
+        (option3_text, option3_emoji),
+        (option4_text, option4_emoji),
+        (option5_text, option5_emoji),
+        (option6_text, option6_emoji),
+    ]) if text and emoji}
+)
 
     # Build list of valid options
     options = []
@@ -652,6 +686,14 @@ async def event(
     details: str
 ):
     await interaction.response.defer()
+
+    debug_command(
+    "event", interaction.user,
+    title=title,
+    time=time,
+    location=location,
+    details=details
+)
 
     view = RSVPView(creator=interaction.user, event_title=title)
     embed = view.format_embed()
