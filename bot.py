@@ -261,7 +261,7 @@ async def ward(interaction: discord.Interaction):
     try:
         await interaction.response.defer(ephemeral=True)  # Defer response to prevent timeout
         await interaction.delete_original_response()  # Delete the interaction message
-        await interaction.channel.send("nigward")  # Send the reply
+        await interaction.channel.send("regular ward")  # Send the reply
     except discord.Forbidden:
         await interaction.followup.send("❌ I don't have permission to delete messages!", ephemeral=True)
     except discord.HTTPException:
