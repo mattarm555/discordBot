@@ -15,6 +15,8 @@ from discord.ext import commands, tasks
 from datetime import datetime
 from discord import app_commands
 from dotenv import load_dotenv
+from discord import ui, Interaction
+import math
 
 
 # Load bot token from environment variable
@@ -349,36 +351,59 @@ async def play(interaction: discord.Interaction, url: str):
 
 
 
-@tree.command(name="queue", description="Displays the current song queue.")
+@tree.command(name="queue", description="Displays the current song queue with pagination.")
 async def queue(interaction: discord.Interaction):
-    """Displays the current song queue with thumbnails inline."""
-    if interaction.guild.id in queues and queues[interaction.guild.id]:
-        count = len(queues[interaction.guild.id])
-        song_label = "song" if count == 1 else "songs"
+    """Displays the current song queue with pagination."""
+    guild_id = interaction.guild.id
+    song_queue = queues.get(guild_id, [])
 
-        # First response to prevent the "application did not respond" error
-        header_embed = discord.Embed(
-            title="🎶 Current Queue:",
-            description=f"{count} {song_label} in queue",
-            color=discord.Color.blue()
-        )
-        await interaction.response.send_message(embed=header_embed)
+    if not song_queue:
+        embed = discord.Embed(title="Queue Empty", description="The queue is empty.", color=discord.Color.red())
+        await interaction.response.send_message(embed=embed)
+        return
 
-        # Then send each song as a separate embed
-        for i, song in enumerate(queues[interaction.guild.id]):
+    # Pagination class
+    class QueueView(ui.View):
+        def __init__(self, queue, per_page=5):
+            super().__init__(timeout=60)
+            self.queue = queue
+            self.per_page = per_page
+            self.page = 0
+            self.max_pages = math.ceil(len(queue) / per_page)
+
+        def format_embed(self):
+            start = self.page * self.per_page
+            end = start + self.per_page
             embed = discord.Embed(
-                title=f'{i+1}. {song["title"]}',
+                title=f"🎶 Current Queue (Page {self.page + 1}/{self.max_pages})",
                 color=discord.Color.blue()
             )
-            embed.set_thumbnail(url=song['thumbnail'])
-            await interaction.channel.send(embed=embed)
-    else:
-        embed = discord.Embed(
-            title='Queue Empty',
-            description='The queue is empty.',
-            color=discord.Color.red()
-        )
-        await interaction.response.send_message(embed=embed)
+            for i, song in enumerate(self.queue[start:end], start=start + 1):
+                embed.add_field(name=f"{i}. {song['title']}", value=" ", inline=False)
+                embed.set_thumbnail(url=song["thumbnail"])
+            return embed
+
+        @ui.button(label="⬅️", style=discord.ButtonStyle.blurple)
+        async def previous(self, interaction: Interaction, button: ui.Button):
+            if self.page > 0:
+                self.page -= 1
+                await interaction.response.edit_message(embed=self.format_embed(), view=self)
+            else:
+                await interaction.response.defer()
+
+        @ui.button(label="➡️", style=discord.ButtonStyle.blurple)
+        async def next(self, interaction: Interaction, button: ui.Button):
+            if self.page < self.max_pages - 1:
+                self.page += 1
+                await interaction.response.edit_message(embed=self.format_embed(), view=self)
+            else:
+                await interaction.response.defer()
+
+    # Show first page
+    view = QueueView(song_queue)
+    embed = view.format_embed()
+    await interaction.response.send_message(embed=embed, view=view)
+
 
 
 
