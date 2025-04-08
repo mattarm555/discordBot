@@ -485,6 +485,8 @@ async def help(interaction: discord.Interaction):
     embed.add_field(name="/leaderboard", value="Shows the leaders in XP in this server.", inline=False)
     embed.add_field(name="/spam <user> <num>", value="Spams a user a specified number of times.", inline=False)
     embed.add_field(name="/lol <num>", value="Pings the League of Legends role.", inline=False)
+    embed.add_field(name="/poll", value="Allows user to create poll. Configurable.", inline=False)
+    embed.add_field(name="/event", value="Allows user to create event. Other members can RSVP.", inline=False)
     embed.set_footer(text="Please let me know any more commands you would like to see!")
 
     await interaction.response.send_message(embed=embed)
