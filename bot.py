@@ -371,7 +371,7 @@ async def queue(interaction: discord.Interaction):
             self.page = 0
             self.max_pages = math.ceil(len(queue) / per_page)
 
-       def format_embed(self):
+        def format_embed(self):
             start = self.page * self.per_page
             end = start + self.per_page
 
