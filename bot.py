@@ -18,11 +18,10 @@ from dotenv import load_dotenv
 from discord import ui, Interaction, Embed
 import math
 
-
-# Load bot token from environment variable
 load_dotenv()
-TOKEN = os.getenv("TOKEN")  # Make sure TOKEN is set in your environment
+print(f"\033[1;33m[DEBUG] ENV Loaded: OPENAI_API_KEY={os.getenv('OPENAI_API_KEY')}\033[0m")
 openai.api_key = os.getenv("OPENAI_API_KEY")
+TOKEN = os.getenv("TOKEN")
 
 intents = discord.Intents.default()
 intents.members = True  # Enable member fetching
