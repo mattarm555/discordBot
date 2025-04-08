@@ -174,7 +174,7 @@ async def lol(interaction: discord.Interaction, count: int = 1):
 @tree.command(name="spam", description="Mentions a user multiple times.")
 @app_commands.describe(user="The user to mention", count="Number of times to mention the user (max 20)")
 async def spam(interaction: discord.Interaction, user: discord.Member, count: int = 1):
-    debug_command("spam", interaction.user, user=user.display_name, count=count)
+    debug_command("spam", interaction.user, target=user.display_name, count=count)
     """Mentions a user multiple times."""
     
     if count > 20:
