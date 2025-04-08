@@ -351,8 +351,17 @@ async def play(interaction: discord.Interaction, url: str):
 
 @tree.command(name="queue", description="Displays the current song queue.")
 async def queue(interaction: discord.Interaction):
-    """Displays the current song queue with full thumbnails."""
+    """Displays the current song queue with thumbnails inline."""
     if interaction.guild.id in queues and queues[interaction.guild.id]:
+        # First response to prevent the "application did not respond" error
+        header_embed = discord.Embed(
+            title="🎶 Current Queue:",
+            description=f"{len(queues[interaction.guild.id])} song(s) in queue",
+            color=discord.Color.blue()
+        )
+        await interaction.response.send_message(embed=header_embed)
+
+        # Then send each song as a separate embed
         for i, song in enumerate(queues[interaction.guild.id]):
             embed = discord.Embed(
                 title=f'{i+1}. {song["title"]}',
@@ -367,6 +376,7 @@ async def queue(interaction: discord.Interaction):
             color=discord.Color.red()
         )
         await interaction.response.send_message(embed=embed)
+
 
 
 
