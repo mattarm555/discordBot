@@ -42,8 +42,6 @@ voice_time = {}
 async def on_ready():
     await bot.wait_until_ready()  # Ensure bot is fully ready
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name='/help'))
-    await tree.sync(guild=discord.Object(id=870519196419760188))  # Fast guild sync
-    print(f"Synced commands to test guild.")
     try:
         synced = await tree.sync()
         print(f"Synced {len(synced)} commands.")
