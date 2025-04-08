@@ -22,7 +22,7 @@ import math
 # Load bot token from environment variable
 load_dotenv()
 TOKEN = os.getenv("TOKEN")  # Make sure TOKEN is set in your environment
-
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 intents = discord.Intents.default()
 intents.members = True  # Enable member fetching
@@ -36,6 +36,10 @@ tree = bot.tree
 
 xp_data = {}
 voice_time = {}
+sniped_messages = {}
+quote_data = []
+
+
 
 
 @bot.event
@@ -49,6 +53,16 @@ async def on_ready():
         print(f"Failed to sync commands: {e}")
         
     print(f"Logged in as {bot.user}")
+
+try:
+    with open("quotes.json", "r") as f:
+        quote_data = json.load(f)
+except:
+    quote_data = []
+
+def save_quotes():
+    with open("quotes.json", "w") as f:
+        json.dump(quote_data, f, indent=4)
 
 # Load XP data from a file (persistent storage)
 try:
@@ -77,12 +91,151 @@ excluded_channels = [
     947706529811943475
 ]
 
+print(f"\033[1;35m[DEBUG] Discord Bot Token: {TOKEN}\033[0m")
+print(f"\033[1;36m[DEBUG] OpenAI API Key: {openai.api_key}\033[0m")
+
+
 def debug_command(command_name, user, **kwargs):
     print(f"\033[1;32m[COMMAND] /{command_name}\033[0m triggered by \033[1;33m{user.display_name}\033[0m")
     if kwargs:
         print("\033[1;36mInput:\033[0m")
         for key, value in kwargs.items():
             print(f"\033[1;31m  {key.capitalize()}: {value}\033[0m")
+
+@bot.event
+async def on_message_delete(message):
+    if message.author.bot:
+        return
+    sniped_messages[message.channel.id] = {
+        "content": message.content,
+        "author": message.author,
+        "time": message.created_at
+    }
+
+@tree.command(name="snipe", description="Snipes the last deleted message in this channel.")
+async def snipe(interaction: discord.Interaction):
+    debug_command("snipe", interaction.user)
+    snipe_data = sniped_messages.get(interaction.channel.id)
+
+    if not snipe_data:
+        await interaction.response.send_message("❌ Nothing to snipe here.", ephemeral=True)
+        return
+
+    embed = discord.Embed(
+        title="Get Sniped Gang",
+        description=snipe_data["content"],
+        color=discord.Color.dark_red(),
+        timestamp=snipe_data["time"]
+    )
+    embed.set_author(name=snipe_data["author"].display_name, icon_url=snipe_data["author"].avatar.url if snipe_data["author"].avatar else None)
+    await interaction.response.send_message(embed=embed)
+
+@tree.command(name="quote_add", description="Add a new quote.")
+@app_commands.describe(text="The quote and who said it.")
+async def quote_add(interaction: discord.Interaction, text: str):
+    debug_command("quote_add", interaction.user, text=text)
+    quote_data.append(text)
+    save_quotes()
+    await interaction.response.send_message(f"✅ Quote saved!")
+
+@tree.command(name="quote_get", description="Get a random quote.")
+async def quote_get(interaction: discord.Interaction):
+    debug_command("quote_get", interaction.user)
+    if not quote_data:
+        await interaction.response.send_message("No quotes yet!")
+        return
+    quote = random.choice(quote_data)
+    await interaction.response.send_message(f"📜 \"{quote}\"")
+
+@tree.command(name="quote_list", description="Lists saved quotes with pagination.")
+async def quote_list(interaction: discord.Interaction):
+    debug_command("quote_list", interaction.user)
+
+    if not quote_data:
+        await interaction.response.send_message("❌ No quotes saved.")
+        return
+
+    class QuotePagination(ui.View):
+        def __init__(self, quotes, per_page=5):
+            super().__init__(timeout=60)
+            self.quotes = quotes
+            self.per_page = per_page
+            self.page = 0
+            self.max_pages = (len(quotes) - 1) // per_page + 1
+
+        def get_embed(self):
+            start = self.page * self.per_page
+            end = start + self.per_page
+            embed = discord.Embed(
+                title=f"📜 Saved Quotes (Page {self.page + 1}/{self.max_pages})",
+                description="\n".join([f"**{i+1}.** {q}" for i, q in enumerate(self.quotes[start:end], start=start)]),
+                color=discord.Color.blurple()
+            )
+            return embed
+
+        @ui.button(label="⬅️ Prev", style=discord.ButtonStyle.blurple)
+        async def prev(self, interaction: Interaction, button: ui.Button):
+            if self.page > 0:
+                self.page -= 1
+                await interaction.response.edit_message(embed=self.get_embed(), view=self)
+            else:
+                await interaction.response.defer()
+
+        @ui.button(label="➡️ Next", style=discord.ButtonStyle.blurple)
+        async def next(self, interaction: Interaction, button: ui.Button):
+            if self.page < self.max_pages - 1:
+                self.page += 1
+                await interaction.response.edit_message(embed=self.get_embed(), view=self)
+            else:
+                await interaction.response.defer()
+
+    view = QuotePagination(quote_data)
+    await interaction.response.send_message(embed=view.get_embed(), view=view)
+
+
+@tree.command(name="quote_edit", description="Edit an existing quote.")
+@app_commands.describe(index="The quote number to edit", new_text="The new quote text")
+async def quote_edit(interaction: discord.Interaction, index: int, new_text: str):
+    debug_command("quote_edit", interaction.user, index=index, new_text=new_text)
+    if index < 1 or index > len(quote_data):
+        await interaction.response.send_message("❌ Invalid quote number.")
+        return
+    quote_data[index - 1] = new_text
+    save_quotes()
+    await interaction.response.send_message(f"✅ Quote #{index} updated.")
+
+@tree.command(name="quote_delete", description="Delete a quote by its number.")
+@app_commands.describe(index="The quote number to delete")
+async def quote_delete(interaction: discord.Interaction, index: int):
+    debug_command("quote_delete", interaction.user, index=index)
+    if index < 1 or index > len(quote_data):
+        await interaction.response.send_message("❌ Invalid quote number.")
+        return
+    removed = quote_data.pop(index - 1)
+    save_quotes()
+    await interaction.response.send_message(f"🗑️ Removed quote #{index}:\n\"{removed}\"")
+
+
+
+@tree.command(name="askai", description="Ask AI anything (GPT-style response).")
+@app_commands.describe(prompt="What would you like to ask?")
+async def askai(interaction: discord.Interaction, prompt: str):
+    debug_command("askai", interaction.user, prompt=prompt)
+    await interaction.response.defer()
+
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=300,
+            temperature=0.7
+        )
+        answer = response["choices"][0]["message"]["content"]
+        await interaction.followup.send(f"🧠 **AI says:**\n{answer}")
+    except Exception as e:
+        await interaction.followup.send(f"❌ Error: {str(e)}")
+
+
 
 
 @bot.event
