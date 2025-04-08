@@ -657,6 +657,8 @@ async def help(interaction: discord.Interaction):
     embed.add_field(name="/lol <num>", value="Pings the League of Legends role.", inline=False)
     embed.add_field(name="/poll", value="Allows user to create poll. Configurable.", inline=False)
     embed.add_field(name="/event", value="Allows user to create event. Other members can RSVP.", inline=False)
+    embed.add_field(name="/quote_add, /quote_get, /quote_list, /quote_edit, /quote_delete", value="Allows users to upload a quote! Edit, type a number from the list to edit a quote. Delete, same thing to delete. List provides a list of quotes uploaded by users. Get randomly picks a quote!", inline=False)
+    embed.add_field(name="/askai", value="Ask ChatGPT for some help!", inline=False)
     embed.set_footer(text="Please let me know any more commands you would like to see!")
 
     await interaction.response.send_message(embed=embed)
