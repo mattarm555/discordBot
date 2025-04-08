@@ -14,8 +14,11 @@ from gtts import gTTS
 from discord.ext import commands, tasks
 from datetime import datetime
 from discord import app_commands
+from dotenv import load_dotenv
+
 
 # Load bot token from environment variable
+load_dotenv()
 TOKEN = os.getenv("TOKEN")  # Make sure TOKEN is set in your environment
 
 
