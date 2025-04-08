@@ -15,7 +15,7 @@ from discord.ext import commands, tasks
 from datetime import datetime
 from discord import app_commands
 from dotenv import load_dotenv
-from discord import ui, Interaction
+from discord import ui, Interaction, Embed
 import math
 
 
@@ -490,6 +490,178 @@ async def help(interaction: discord.Interaction):
     embed.set_footer(text="Please let me know any more commands you would like to see!")
 
     await interaction.response.send_message(embed=embed)
+
+
+@tree.command(name="poll", description="Create a custom emoji poll with 2–6 options and a closing timer.")
+@app_commands.describe(
+    question="Your poll question",
+    duration_minutes="How many minutes until the poll closes?",
+    anonymous="Hide voter usernames in the final results?",
+    option1_text="Option 1 text", option1_emoji="Option 1 emoji",
+    option2_text="Option 2 text", option2_emoji="Option 2 emoji",
+    option3_text="Option 3 text", option3_emoji="Option 3 emoji",
+    option4_text="Option 4 text", option4_emoji="Option 4 emoji",
+    option5_text="Option 5 text", option5_emoji="Option 5 emoji",
+    option6_text="Option 6 text", option6_emoji="Option 6 emoji"
+)
+async def poll(
+    interaction: Interaction,
+    question: str,
+    duration_minutes: int,
+    anonymous: bool,
+    option1_text: str, option1_emoji: str,
+    option2_text: str, option2_emoji: str,
+    option3_text: str = None, option3_emoji: str = None,
+    option4_text: str = None, option4_emoji: str = None,
+    option5_text: str = None, option5_emoji: str = None,
+    option6_text: str = None, option6_emoji: str = None
+):
+    await interaction.response.defer()
+
+    # Build list of valid options
+    options = []
+    raw_options = [
+        (option1_text, option1_emoji),
+        (option2_text, option2_emoji),
+        (option3_text, option3_emoji),
+        (option4_text, option4_emoji),
+        (option5_text, option5_emoji),
+        (option6_text, option6_emoji),
+    ]
+    for text, emoji in raw_options:
+        if text and emoji:
+            options.append((text, emoji))
+
+    if len(options) < 2:
+        await interaction.followup.send("You must provide at least two options with emojis.", ephemeral=True)
+        return
+
+    # Send poll embed
+    embed = Embed(title="📊 Poll", description=question, color=0x5865F2)
+    for text, emoji in options:
+        embed.add_field(name=f"{emoji} {text}", value=" ", inline=False)
+    embed.set_footer(text=f"Poll closes in {duration_minutes} minutes • Created by {interaction.user.display_name}")
+    embed.timestamp = datetime.datetime.utcnow()
+
+    msg = await interaction.followup.send(embed=embed, wait=True)
+
+    # Add all emoji reactions
+    for _, emoji in options:
+        try:
+            await msg.add_reaction(emoji)
+        except:
+            pass  # Invalid emoji? Skip.
+
+    await asyncio.sleep(duration_minutes * 60)
+
+    # Fetch updated message with reactions
+    msg = await interaction.channel.fetch_message(msg.id)
+
+    # Tally votes
+    votes = {}  # emoji: [usernames]
+    user_voted = set()
+
+    for reaction in msg.reactions:
+        if str(reaction.emoji) not in [e for _, e in options]:
+            continue  # Ignore unrelated reactions
+
+        async for user in reaction.users():
+            if user.bot:
+                continue
+
+            if user.id not in user_voted:
+                votes.setdefault(str(reaction.emoji), []).append(user)
+                user_voted.add(user.id)  # Prevent duplicate voting
+
+    # Build result message
+    result_embed = Embed(
+        title="📊 Poll Closed",
+        description=question,
+        color=discord.Color.gray()
+    )
+
+    for text, emoji in options:
+        voters = votes.get(emoji, [])
+        count = len(voters)
+
+        if anonymous:
+            result_embed.add_field(name=f"{emoji} {text}", value=f"**{count} vote(s)**", inline=False)
+        else:
+            names = ', '.join(user.display_name for user in voters) or "No votes"
+            result_embed.add_field(name=f"{emoji} {text}", value=f"**{count} vote(s)**\n{names}", inline=False)
+
+    result_embed.set_footer(text=f"Poll created by {interaction.user.display_name}")
+    await msg.edit(embed=result_embed)
+
+class RSVPView(ui.View):
+    def __init__(self, creator: discord.User, event_title: str):
+        super().__init__(timeout=None)
+        self.going = set()
+        self.not_going = set()
+        self.creator = creator
+        self.event_title = event_title
+        self.message = None
+
+    def format_embed(self):
+        embed = Embed(
+            title=f"📅 {self.event_title}",
+            description="Click a button to RSVP!",
+            color=discord.Color.gold()
+        )
+        embed.add_field(
+            name="✅ Going",
+            value="\n".join(user.mention for user in self.going) or "No one yet",
+            inline=True
+        )
+        embed.add_field(
+            name="❌ Not Going",
+            value="\n".join(user.mention for user in self.not_going) or "No one yet",
+            inline=True
+        )
+        embed.set_footer(text=f"Event created by {self.creator.display_name}")
+        embed.timestamp = datetime.datetime.utcnow()
+        return embed
+
+    @ui.button(label="✅ Going", style=discord.ButtonStyle.success)
+    async def rsvp_yes(self, interaction: Interaction, button: ui.Button):
+        self.not_going.discard(interaction.user)
+        self.going.add(interaction.user)
+        await self.update(interaction)
+
+    @ui.button(label="❌ Not Going", style=discord.ButtonStyle.danger)
+    async def rsvp_no(self, interaction: Interaction, button: ui.Button):
+        self.going.discard(interaction.user)
+        self.not_going.add(interaction.user)
+        await self.update(interaction)
+
+    async def update(self, interaction: Interaction):
+        await interaction.response.edit_message(embed=self.format_embed(), view=self)
+
+@tree.command(name="event", description="Create an interactive RSVP event.")
+@app_commands.describe(
+    title="Event title",
+    time="When is the event?",
+    location="Where is it?",
+    details="More information about the event"
+)
+async def event(
+    interaction: Interaction,
+    title: str,
+    time: str,
+    location: str,
+    details: str
+):
+    await interaction.response.defer()
+
+    view = RSVPView(creator=interaction.user, event_title=title)
+    embed = view.format_embed()
+    embed.add_field(name="🕒 Time", value=time, inline=False)
+    embed.add_field(name="📍 Location", value=location, inline=False)
+    embed.add_field(name="📝 Details", value=details, inline=False)
+
+    message = await interaction.followup.send(embed=embed, view=view, wait=True)
+    view.message = message
+
 
 
         
