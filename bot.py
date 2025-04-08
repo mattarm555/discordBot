@@ -19,7 +19,6 @@ from discord import ui, Interaction, Embed
 import math
 
 load_dotenv()
-print(f"\033[1;33m[DEBUG] ENV Loaded: OPENAI_API_KEY={os.getenv('OPENAI_API_KEY')}\033[0m")
 openai.api_key = os.getenv("OPENAI_API_KEY")
 TOKEN = os.getenv("TOKEN")
 
