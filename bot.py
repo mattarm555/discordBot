@@ -182,9 +182,10 @@ async def spam(interaction: discord.Interaction, user: discord.Member, count: in
 
 @bot.event
 async def on_member_join(member):
-    """Assigns a role and welcomes a new member."""
-    role_id = 870551516837199902  # Replace with actual role ID
-    welcome_channel_id = 870519197279608834  # Replace with actual welcome channel ID
+    print(f"Member joined: {member}")  # For debugging in console
+
+    role_id = 870551516837199902
+    welcome_channel_id = 870519197279608834
 
     role = member.guild.get_role(role_id)
     welcome_channel = bot.get_channel(welcome_channel_id)
@@ -264,7 +265,7 @@ async def ward(interaction: discord.Interaction):
     try:
         await interaction.response.defer(ephemeral=True)  # Defer response to prevent timeout
         await interaction.delete_original_response()  # Delete the interaction message
-        await interaction.channel.send("regular ward")  # Send the reply
+        await interaction.channel.send("nigward")  # Send the reply
     except discord.Forbidden:
         await interaction.followup.send("❌ I don't have permission to delete messages!", ephemeral=True)
     except discord.HTTPException:
@@ -350,33 +351,31 @@ async def play(interaction: discord.Interaction, url: str):
 
 @tree.command(name="queue", description="Displays the current song queue.")
 async def queue(interaction: discord.Interaction):
-    """Displays the current song queue."""
+    """Displays the current song queue with full thumbnails."""
     if interaction.guild.id in queues and queues[interaction.guild.id]:
-        embed = discord.Embed(title='Current Queue', color=discord.Color.blue())
-
         for i, song in enumerate(queues[interaction.guild.id]):
-            embed.add_field(name=f'{i+1}. {song["title"]}', value=' ', inline=False)
+            embed = discord.Embed(
+                title=f'{i+1}. {song["title"]}',
+                color=discord.Color.blue()
+            )
             embed.set_thumbnail(url=song['thumbnail'])
-
-        await interaction.response.send_message(embed=embed)
+            await interaction.channel.send(embed=embed)
     else:
-        embed = discord.Embed(title='Queue Empty', description='The queue is empty.', color=discord.Color.red())
+        embed = discord.Embed(
+            title='Queue Empty',
+            description='The queue is empty.',
+            color=discord.Color.red()
+        )
         await interaction.response.send_message(embed=embed)
+
 
 
 @tree.command(name="skip", description="Skips the current song and plays the next one in the queue.")
 async def skip(interaction: discord.Interaction):
-    """Skips the current song and plays the next one in the queue."""
+    """Skips the current song and lets the after= callback trigger play_next."""
     if interaction.guild.voice_client and interaction.guild.voice_client.is_playing():
-        interaction.guild.voice_client.stop()
+        interaction.guild.voice_client.stop()  # This triggers after=play_next
 
-        # Check if queue is empty
-        if not queues.get(interaction.guild.id):  # If no songs left in queue
-            embed = discord.Embed(title='End of Queue', description='No more songs left to play.', color=discord.Color.red())
-            await interaction.response.send_message(embed=embed)
-            return
-        
-        play_next(interaction)
         embed = discord.Embed(title='Skipped', description='Skipped to the next song.', color=discord.Color.orange())
         await interaction.response.send_message(embed=embed)
     else:
