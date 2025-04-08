@@ -371,17 +371,26 @@ async def queue(interaction: discord.Interaction):
             self.page = 0
             self.max_pages = math.ceil(len(queue) / per_page)
 
-        def format_embed(self):
-            start = self.page * self.per_page
-            end = start + self.per_page
-            embed = discord.Embed(
-                title=f"🎶 Current Queue (Page {self.page + 1}/{self.max_pages})",
-                color=discord.Color.blue()
-            )
-            for i, song in enumerate(self.queue[start:end], start=start + 1):
-                embed.add_field(name=f"{i}. {song['title']}", value=" ", inline=False)
-                embed.set_thumbnail(url=song["thumbnail"])
-            return embed
+       def format_embed(self):
+    start = self.page * self.per_page
+    end = start + self.per_page
+
+    embed = discord.Embed(
+        title=f"🎶 Current Queue (Page {self.page + 1}/{self.max_pages})",
+        color=discord.Color.blue()
+    )
+
+    songs_on_page = self.queue[start:end]
+
+    for i, song in enumerate(songs_on_page, start=start + 1):
+        embed.add_field(name=f"{i}. {song['title']}", value=" ", inline=False)
+
+    if songs_on_page:
+        # 🧊 Use the first song on *this* page at this moment for the thumbnail
+        embed.set_thumbnail(url=songs_on_page[0]['thumbnail'])
+
+    return embed
+
 
         @ui.button(label="⬅️", style=discord.ButtonStyle.blurple)
         async def previous(self, interaction: Interaction, button: ui.Button):
