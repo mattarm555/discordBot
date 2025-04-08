@@ -353,10 +353,13 @@ async def play(interaction: discord.Interaction, url: str):
 async def queue(interaction: discord.Interaction):
     """Displays the current song queue with thumbnails inline."""
     if interaction.guild.id in queues and queues[interaction.guild.id]:
+        count = len(queues[interaction.guild.id])
+        song_label = "song" if count == 1 else "songs"
+
         # First response to prevent the "application did not respond" error
         header_embed = discord.Embed(
             title="🎶 Current Queue:",
-            description=f"{len(queues[interaction.guild.id])} song(s) in queue",
+            description=f"{count} {song_label} in queue",
             color=discord.Color.blue()
         )
         await interaction.response.send_message(embed=header_embed)
@@ -376,6 +379,7 @@ async def queue(interaction: discord.Interaction):
             color=discord.Color.red()
         )
         await interaction.response.send_message(embed=embed)
+
 
 
 
