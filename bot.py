@@ -182,7 +182,7 @@ async def spam(interaction: discord.Interaction, user: discord.Member, count: in
 
 @bot.event
 async def on_member_join(member):
-    print(f"Member joined: {member}")  # For debugging in console
+    print(f"yo gang this new mf just joined btw: {member}")  # For debugging in console
 
     role_id = 870551516837199902
     welcome_channel_id = 870519197279608834
@@ -196,7 +196,7 @@ async def on_member_join(member):
     if welcome_channel:
         embed = discord.Embed(
             title="🎉 Welcome!",
-            description=f"Welcome {member.mention} to **{member.guild.name}**! Enjoy your stay!",
+            description=f"Welcome {member.mention} to **{member.guild.name}**!",
             color=discord.Color.green()
         )
         await welcome_channel.send(embed=embed)
