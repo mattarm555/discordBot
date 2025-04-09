@@ -17,6 +17,7 @@ from discord import app_commands
 from dotenv import load_dotenv
 from discord import ui, Interaction, Embed
 import math
+import pytz
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -747,7 +748,7 @@ async def poll(
     for text, emoji in options:
         embed.add_field(name=f"{emoji} {text}", value=" ", inline=False)
     embed.set_footer(text=f"Poll closes in {duration_minutes} minutes • Created by {interaction.user.display_name}")
-    embed.timestamp = datetime.utcnow()
+    embed.timestamp = datetime.now(pytz.timezone("US/Eastern"))
 
     msg = await interaction.followup.send(embed=embed, wait=True)
 
@@ -825,7 +826,7 @@ class RSVPView(ui.View):
             inline=True
         )
         embed.set_footer(text=f"Event created by {self.creator.display_name}")
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = datetime.now(pytz.timezone("US/Eastern"))
         return embed
 
     @ui.button(label="✅ Going", style=discord.ButtonStyle.success)
