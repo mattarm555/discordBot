@@ -18,9 +18,10 @@ from dotenv import load_dotenv
 from discord import ui, Interaction, Embed
 import math
 import pytz
+from openai import OpenAI
 
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 TOKEN = os.getenv("TOKEN")
 test_guild_id = 870519196419760188
 
@@ -235,24 +236,35 @@ async def quote_delete(interaction: discord.Interaction, index: int):
 
 
 
-@tree.command(name="askai", description="Ask AI anything (GPT-style response).", guild=discord.Object(id=test_guild_id))
+@tree.command(name="askai", description="Ask AI anything (GPT-style response).")
 @app_commands.describe(prompt="What would you like to ask?")
 async def askai(interaction: discord.Interaction, prompt: str):
     debug_command("askai", interaction.user, prompt=prompt)
     await interaction.response.defer()
 
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=300,
             temperature=0.7
         )
-        answer = response["choices"][0]["message"]["content"]
-        await interaction.followup.send(f"🧠 **AI says:**\n{answer}")
-    except Exception as e:
-        await interaction.followup.send(f"❌ Error: {str(e)}")
+        answer = response.choices[0].message.content
 
+        embed = discord.Embed(
+            title="🧠 AI says:",
+            description=answer,
+            color=discord.Color.blue()
+        )
+        await interaction.followup.send(embed=embed)
+
+    except Exception as e:
+        embed = discord.Embed(
+            title="❌ Error",
+            description=str(e),
+            color=discord.Color.red()
+        )
+        await interaction.followup.send(embed=embed)
 
 
 
