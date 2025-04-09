@@ -534,24 +534,33 @@ async def queue(interaction: discord.Interaction):
             self.max_pages = math.ceil(len(queue) / per_page)
 
         def format_embed(self):
-            start = self.page * self.per_page
-            end = start + self.per_page
+            embed = Embed(
+            title=f"📅 {self.event_title}",
+            description="Click a button to RSVP!",
+            color=discord.Color.gold()
+        )
 
-            embed = discord.Embed(
-                title=f"🎶 Current Queue (Page {self.page + 1}/{self.max_pages})",
-                color=discord.Color.blue()
-            )
+    # Add event details (these are already passed in)
+            embed.add_field(name="🕒 Time", value=self.event_time, inline=False)
+            embed.add_field(name="📍 Location", value=self.event_location, inline=False)
+            embed.add_field(name="📝 Details", value=self.event_details, inline=False)
 
-            songs_on_page = self.queue[start:end]
+    # RSVP section at the bottom
+            embed.add_field(
+                name="✅ Going",
+                value="\n".join(user.mention for user in self.going) or "No one yet",
+            inline=True
+        )
+        embed.add_field(
+            name="❌ Not Going",
+            value="\n".join(user.mention for user in self.not_going) or "No one yet",
+            inline=True
+        )    
 
-            for i, song in enumerate(songs_on_page, start=start + 1):
-                embed.add_field(name=f"{i}. {song['title']}", value=" ", inline=False)
+        embed.set_footer(text=f"Event created by {self.creator.display_name}")
+        embed.timestamp = datetime.now(pytz.timezone("US/Eastern"))
+        return embed
 
-            if songs_on_page:
-                # 🧊 Use the first song on *this* page at this moment for the thumbnail
-                embed.set_thumbnail(url=songs_on_page[0]['thumbnail'])
-
-            return embed
 
 
         @ui.button(label="⬅️", style=discord.ButtonStyle.blurple)
@@ -777,12 +786,15 @@ async def poll(
     await msg.edit(embed=result_embed)
 
 class RSVPView(ui.View):
-    def __init__(self, creator: discord.User, event_title: str):
+    def __init__(self, creator, event_title, event_time, event_location, event_details):
         super().__init__(timeout=None)
-        self.going = set()
-        self.not_going = set()
         self.creator = creator
         self.event_title = event_title
+        self.event_time = event_time
+        self.event_location = event_location
+        self.event_details = event_details
+        self.going = set()
+        self.not_going = set()
         self.message = None
 
     def format_embed(self):
@@ -791,6 +803,10 @@ class RSVPView(ui.View):
             description="Click a button to RSVP!",
             color=discord.Color.gold()
         )
+        embed.add_field(name="🕒 Time", value=self.event_time, inline=False)
+        embed.add_field(name="📍 Location", value=self.event_location, inline=False)
+        embed.add_field(name="📝 Details", value=self.event_details, inline=False)
+
         embed.add_field(
             name="✅ Going",
             value="\n".join(user.mention for user in self.going) or "No one yet",
@@ -801,6 +817,7 @@ class RSVPView(ui.View):
             value="\n".join(user.mention for user in self.not_going) or "No one yet",
             inline=True
         )
+
         embed.set_footer(text=f"Event created by {self.creator.display_name}")
         embed.timestamp = datetime.now(pytz.timezone("US/Eastern"))
         return embed
@@ -820,6 +837,7 @@ class RSVPView(ui.View):
     async def update(self, interaction: Interaction):
         await interaction.response.edit_message(embed=self.format_embed(), view=self)
 
+
 @tree.command(name="event", description="Create an interactive RSVP event.", guild=discord.Object(id=test_guild_id))
 @app_commands.describe(
     title="Event title",
@@ -837,21 +855,25 @@ async def event(
     await interaction.response.defer()
 
     debug_command(
-    "event", interaction.user,
-    title=title,
-    time=time,
-    location=location,
-    details=details
-)
+        "event", interaction.user,
+        title=title,
+        time=time,
+        location=location,
+        details=details
+    )
 
-    view = RSVPView(creator=interaction.user, event_title=title)
+    view = RSVPView(
+        creator=interaction.user,
+        event_title=title,
+        event_time=time,
+        event_location=location,
+        event_details=details
+    )
+
     embed = view.format_embed()
-    embed.add_field(name="🕒 Time", value=time, inline=False)
-    embed.add_field(name="📍 Location", value=location, inline=False)
-    embed.add_field(name="📝 Details", value=details, inline=False)
-
     message = await interaction.followup.send(embed=embed, view=view, wait=True)
     view.message = message
+
 
 
 
