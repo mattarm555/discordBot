@@ -98,7 +98,6 @@ excluded_channels = [
     947706529811943475
 ]
 
-print(f"\033[1;36m[DEBUG] OpenAI API Key: {client.api_key}\033[0m")
 
 
 def debug_command(command_name, user, **kwargs):
