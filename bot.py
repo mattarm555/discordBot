@@ -51,14 +51,14 @@ async def on_ready():
 
     # Fast sync to your test server for instant access
     await tree.sync(guild=guild)
-    print(f"✅ Synced commands to test guild {test_guild_id}")
+    print(f"Synced commands to server {test_guild_id}")
 
     # Also sync globally (takes up to 1 hour)
     await tree.sync()
-    print("🌐 Synced commands globally (may take up to 60 minutes)")
+    print("Synced commands globally)
 
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name='/help'))
-    print(f"✅ Logged in as {bot.user}")
+    print(f"Logged in as {bot.user}")
 
 
 try:
