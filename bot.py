@@ -526,58 +526,48 @@ async def queue(interaction: discord.Interaction):
 
     # Pagination class
     class QueueView(ui.View):
-        def __init__(self, queue, per_page=5):
-            super().__init__(timeout=60)
-            self.queue = queue
-            self.per_page = per_page
-            self.page = 0
-            self.max_pages = math.ceil(len(queue) / per_page)
+    def __init__(self, queue, per_page=5):
+        super().__init__(timeout=60)
+        self.queue = queue
+        self.per_page = per_page
+        self.page = 0
+        self.max_pages = math.ceil(len(queue) / per_page)
 
-        def format_embed(self):
-            embed = Embed(
-            title=f"📅 {self.event_title}",
-            description="Click a button to RSVP!",
-            color=discord.Color.gold()
+    def format_embed(self):
+        start = self.page * self.per_page
+        end = start + self.per_page
+
+        embed = discord.Embed(
+            title=f"🎶 Current Queue (Page {self.page + 1}/{self.max_pages})",
+            color=discord.Color.blue()
         )
 
-    # Add event details (these are already passed in)
-            embed.add_field(name="🕒 Time", value=self.event_time, inline=False)
-            embed.add_field(name="📍 Location", value=self.event_location, inline=False)
-            embed.add_field(name="📝 Details", value=self.event_details, inline=False)
+        songs_on_page = self.queue[start:end]
 
-    # RSVP section at the bottom
-            embed.add_field(
-                name="✅ Going",
-                value="\n".join(user.mention for user in self.going) or "No one yet",
-            inline=True
-        )
-        embed.add_field(
-            name="❌ Not Going",
-            value="\n".join(user.mention for user in self.not_going) or "No one yet",
-            inline=True
-        )    
+        for i, song in enumerate(songs_on_page, start=start + 1):
+            embed.add_field(name=f"{i}. {song['title']}", value=" ", inline=False)
 
-        embed.set_footer(text=f"Event created by {self.creator.display_name}")
-        embed.timestamp = datetime.now(pytz.timezone("US/Eastern"))
+        if songs_on_page:
+            embed.set_thumbnail(url=songs_on_page[0]['thumbnail'])
+
         return embed
 
+    @ui.button(label="⬅️", style=discord.ButtonStyle.blurple)
+    async def previous(self, interaction: Interaction, button: ui.Button):
+        if self.page > 0:
+            self.page -= 1
+            await interaction.response.edit_message(embed=self.format_embed(), view=self)
+        else:
+            await interaction.response.defer()
 
+    @ui.button(label="➡️", style=discord.ButtonStyle.blurple)
+    async def next(self, interaction: Interaction, button: ui.Button):
+        if self.page < self.max_pages - 1:
+            self.page += 1
+            await interaction.response.edit_message(embed=self.format_embed(), view=self)
+        else:
+            await interaction.response.defer()
 
-        @ui.button(label="⬅️", style=discord.ButtonStyle.blurple)
-        async def previous(self, interaction: Interaction, button: ui.Button):
-            if self.page > 0:
-                self.page -= 1
-                await interaction.response.edit_message(embed=self.format_embed(), view=self)
-            else:
-                await interaction.response.defer()
-
-        @ui.button(label="➡️", style=discord.ButtonStyle.blurple)
-        async def next(self, interaction: Interaction, button: ui.Button):
-            if self.page < self.max_pages - 1:
-                self.page += 1
-                await interaction.response.edit_message(embed=self.format_embed(), view=self)
-            else:
-                await interaction.response.defer()
 
     # Show first page
     view = QueueView(song_queue)
