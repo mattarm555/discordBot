@@ -18,9 +18,9 @@ from dotenv import load_dotenv
 from discord import ui, Interaction, Embed
 import math
 import pytz
+load_dotenv()
 from openai import OpenAI
 
-load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 print(f"[DEBUG] Loaded OPENAI_API_KEY = {os.getenv('OPENAI_API_KEY')}")
 TOKEN = os.getenv("TOKEN")
