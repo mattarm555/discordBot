@@ -42,15 +42,22 @@ quote_data = []
 
 @bot.event
 async def on_ready():
-    await bot.wait_until_ready()  # Ensure bot is fully ready
+    await bot.wait_until_ready()
+
+    GUILD_ID = 870519196419760188  # Replace with your actual server ID
+    guild = discord.Object(id=test_guild_id)
+
+    # Fast sync to your test server for instant access
+    await tree.sync(guild=guild)
+    print(f"✅ Synced commands to test guild {test_guild_id}")
+
+    # Also sync globally (takes up to 1 hour)
+    await tree.sync()
+    print("🌐 Synced commands globally (may take up to 60 minutes)")
+
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name='/help'))
-    try:
-        synced = await tree.sync()
-        print(f"Synced {len(synced)} commands.")
-    except Exception as e:
-        print(f"Failed to sync commands: {e}")
-        
-    print(f"Logged in as {bot.user}")
+    print(f"✅ Logged in as {bot.user}")
+
 
 try:
     with open("quotes.json", "r") as f:
@@ -110,7 +117,7 @@ async def on_message_delete(message):
         "time": message.created_at
     }
 
-@tree.command(name="snipe", description="Snipes the last deleted message in this channel.")
+@tree.command(name="snipe", description="Snipes the last deleted message in this channel.", guild=discord.Object(id=GUILD_ID))
 async def snipe(interaction: discord.Interaction):
     debug_command("snipe", interaction.user)
     snipe_data = sniped_messages.get(interaction.channel.id)
@@ -128,7 +135,7 @@ async def snipe(interaction: discord.Interaction):
     embed.set_author(name=snipe_data["author"].display_name, icon_url=snipe_data["author"].avatar.url if snipe_data["author"].avatar else None)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="quote_add", description="Add a new quote.")
+@tree.command(name="quote_add", description="Add a new quote.", guild=discord.Object(id=GUILD_ID))
 @app_commands.describe(text="The quote and who said it.")
 async def quote_add(interaction: discord.Interaction, text: str):
     debug_command("quote_add", interaction.user, text=text)
@@ -136,7 +143,7 @@ async def quote_add(interaction: discord.Interaction, text: str):
     save_quotes()
     await interaction.response.send_message(f"✅ Quote saved!")
 
-@tree.command(name="quote_get", description="Get a random quote.")
+@tree.command(name="quote_get", description="Get a random quote.", guild=discord.Object(id=GUILD_ID))
 async def quote_get(interaction: discord.Interaction):
     debug_command("quote_get", interaction.user)
     if not quote_data:
@@ -145,7 +152,7 @@ async def quote_get(interaction: discord.Interaction):
     quote = random.choice(quote_data)
     await interaction.response.send_message(f"📜 \"{quote}\"")
 
-@tree.command(name="quote_list", description="Lists saved quotes with pagination.")
+@tree.command(name="quote_list", description="Lists saved quotes with pagination.", guild=discord.Object(id=GUILD_ID))
 async def quote_list(interaction: discord.Interaction):
     debug_command("quote_list", interaction.user)
 
@@ -191,7 +198,7 @@ async def quote_list(interaction: discord.Interaction):
     await interaction.response.send_message(embed=view.get_embed(), view=view)
 
 
-@tree.command(name="quote_edit", description="Edit an existing quote.")
+@tree.command(name="quote_edit", description="Edit an existing quote.", guild=discord.Object(id=GUILD_ID))
 @app_commands.describe(index="The quote number to edit", new_text="The new quote text")
 async def quote_edit(interaction: discord.Interaction, index: int, new_text: str):
     debug_command("quote_edit", interaction.user, index=index, new_text=new_text)
@@ -202,7 +209,7 @@ async def quote_edit(interaction: discord.Interaction, index: int, new_text: str
     save_quotes()
     await interaction.response.send_message(f"✅ Quote #{index} updated.")
 
-@tree.command(name="quote_delete", description="Delete a quote by its number.")
+@tree.command(name="quote_delete", description="Delete a quote by its number.", guild=discord.Object(id=GUILD_ID))
 @app_commands.describe(index="The quote number to delete")
 async def quote_delete(interaction: discord.Interaction, index: int):
     debug_command("quote_delete", interaction.user, index=index)
@@ -215,7 +222,7 @@ async def quote_delete(interaction: discord.Interaction, index: int):
 
 
 
-@tree.command(name="askai", description="Ask AI anything (GPT-style response).")
+@tree.command(name="askai", description="Ask AI anything (GPT-style response).", guild=discord.Object(id=GUILD_ID))
 @app_commands.describe(prompt="What would you like to ask?")
 async def askai(interaction: discord.Interaction, prompt: str):
     debug_command("askai", interaction.user, prompt=prompt)
@@ -664,7 +671,7 @@ async def help(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
 
-@tree.command(name="poll", description="Create a custom emoji poll with 2–6 options and a closing timer.")
+@tree.command(name="poll", description="Create a custom emoji poll with 2–6 options and a closing timer.", guild=discord.Object(id=GUILD_ID))
 @app_commands.describe(
     question="Your poll question",
     duration_minutes="How many minutes until the poll closes?",
@@ -824,7 +831,7 @@ class RSVPView(ui.View):
     async def update(self, interaction: Interaction):
         await interaction.response.edit_message(embed=self.format_embed(), view=self)
 
-@tree.command(name="event", description="Create an interactive RSVP event.")
+@tree.command(name="event", description="Create an interactive RSVP event.", guild=discord.Object(id=GUILD_ID))
 @app_commands.describe(
     title="Event title",
     time="When is the event?",
