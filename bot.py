@@ -3,7 +3,6 @@ import random
 import json
 import os
 import asyncio
-import openai
 import speech_recognition as sr
 import wave
 import pyaudio
@@ -22,7 +21,6 @@ load_dotenv()
 from openai import OpenAI
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-print(f"[DEBUG] Loaded OPENAI_API_KEY = {os.getenv('OPENAI_API_KEY')}")
 TOKEN = os.getenv("TOKEN")
 test_guild_id = 870519196419760188
 
@@ -99,8 +97,7 @@ excluded_channels = [
     947706529811943475
 ]
 
-print(f"\033[1;35m[DEBUG] Discord Bot Token: {TOKEN}\033[0m")
-print(f"\033[1;36m[DEBUG] OpenAI API Key: {openai.api_key}\033[0m")
+print(f"\033[1;36m[DEBUG] OpenAI API Key: {client.api_key}\033[0m")
 
 
 def debug_command(command_name, user, **kwargs):
