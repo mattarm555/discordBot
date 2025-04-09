@@ -892,4 +892,3 @@ async def event(
         
 print(f"Token: {TOKEN[:5]}********")
 bot.run(TOKEN)
-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
