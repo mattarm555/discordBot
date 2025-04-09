@@ -141,7 +141,9 @@ async def quote_add(interaction: discord.Interaction, text: str):
     debug_command("quote_add", interaction.user, text=text)
     quote_data.append(text)
     save_quotes()
-    await interaction.response.send_message(f"✅ Quote saved!")
+    embed = discord.Embed(title="✅ Quote Saved", description="Your quote was added!", color=discord.Color.green())
+    await interaction.response.send_message(embed=embed)
+
 
 @tree.command(name="quote_get", description="Get a random quote.", guild=discord.Object(id=test_guild_id))
 async def quote_get(interaction: discord.Interaction):
@@ -150,7 +152,9 @@ async def quote_get(interaction: discord.Interaction):
         await interaction.response.send_message("No quotes yet!")
         return
     quote = random.choice(quote_data)
-    await interaction.response.send_message(f"📜 \"{quote}\"")
+    embed = discord.Embed(title="📜 Random Quote", description=f"\"{quote}\"", color=discord.Color.blurple())
+    await interaction.response.send_message(embed=embed)
+
 
 @tree.command(name="quote_list", description="Lists saved quotes with pagination.", guild=discord.Object(id=test_guild_id))
 async def quote_list(interaction: discord.Interaction):
@@ -207,7 +211,9 @@ async def quote_edit(interaction: discord.Interaction, index: int, new_text: str
         return
     quote_data[index - 1] = new_text
     save_quotes()
-    await interaction.response.send_message(f"✅ Quote #{index} updated.")
+    embed = discord.Embed(title="✏️ Quote Updated", description=f"Quote #{index} was successfully updated.", color=discord.Color.green())
+    await interaction.response.send_message(embed=embed)
+
 
 @tree.command(name="quote_delete", description="Delete a quote by its number.", guild=discord.Object(id=test_guild_id))
 @app_commands.describe(index="The quote number to delete")
@@ -218,7 +224,13 @@ async def quote_delete(interaction: discord.Interaction, index: int):
         return
     removed = quote_data.pop(index - 1)
     save_quotes()
-    await interaction.response.send_message(f"🗑️ Removed quote #{index}:\n\"{removed}\"")
+    embed = discord.Embed(
+    title="🗑️ Quote Deleted",
+    description=f"Removed quote #{index}:\n\n\"{removed}\"",
+    color=discord.Color.red()
+)
+    await interaction.response.send_message(embed=embed)
+
 
 
 
@@ -735,7 +747,7 @@ async def poll(
     for text, emoji in options:
         embed.add_field(name=f"{emoji} {text}", value=" ", inline=False)
     embed.set_footer(text=f"Poll closes in {duration_minutes} minutes • Created by {interaction.user.display_name}")
-    embed.timestamp = datetime.datetime.utcnow()
+    embed.timestamp = datetime.utcnow()
 
     msg = await interaction.followup.send(embed=embed, wait=True)
 
@@ -813,7 +825,7 @@ class RSVPView(ui.View):
             inline=True
         )
         embed.set_footer(text=f"Event created by {self.creator.display_name}")
-        embed.timestamp = datetime.datetime.utcnow()
+        embed.timestamp = datetime.utcnow()
         return embed
 
     @ui.button(label="✅ Going", style=discord.ButtonStyle.success)
