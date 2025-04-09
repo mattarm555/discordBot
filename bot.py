@@ -55,7 +55,7 @@ async def on_ready():
 
     # Also sync globally (takes up to 1 hour)
     await tree.sync()
-    print("Synced commands globally)
+    print("Synced commands globally")
 
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name='/help'))
     print(f"Logged in as {bot.user}")
