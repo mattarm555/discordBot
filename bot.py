@@ -22,6 +22,7 @@ from openai import OpenAI
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+print(f"[DEBUG] Loaded OPENAI_API_KEY = {os.getenv('OPENAI_API_KEY')}")
 TOKEN = os.getenv("TOKEN")
 test_guild_id = 870519196419760188
 
