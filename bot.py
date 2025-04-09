@@ -21,6 +21,7 @@ import math
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 TOKEN = os.getenv("TOKEN")
+test_guild_id = 870519196419760188
 
 intents = discord.Intents.default()
 intents.members = True  # Enable member fetching
@@ -44,7 +45,6 @@ quote_data = []
 async def on_ready():
     await bot.wait_until_ready()
 
-    test_guild_id = 870519196419760188  # Replace with your actual server ID
     guild = discord.Object(id=test_guild_id)
 
     # Fast sync to your test server for instant access
